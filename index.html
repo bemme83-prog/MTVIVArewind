@@ -43,9 +43,19 @@
         #viva-tag { position: absolute; bottom: 25%; left: 0; z-index: 200; background: var(--viva-yellow); color: var(--viva-blue); padding: 15px 40px; border: 5px solid var(--viva-blue); box-shadow: 8px 8px 0px var(--viva-pink); transform: translateX(-110%); transition: 0.5s; pointer-events: none; }
         #viva-tag.show { transform: translateX(0); }
         
-        /* Buttons tiefer gesetzt */
-        .viva-controls { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 10px; opacity: 0; transition: 0.5s; width: 90%; justify-content: center; }
-        .btn-v { background: var(--viva-blue); color: var(--viva-yellow); border: 4px solid var(--viva-yellow); padding: 15px 20px; font-size: 14px; cursor: pointer; flex: 1; max-width: 150px; font-weight: 900; text-transform: uppercase; }
+        /* VIVA Buttons als Dreiecke ganz unten */
+        .viva-controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 30px; opacity: 0; transition: 0.5s; pointer-events: none; }
+        .viva-controls.show { opacity: 1; pointer-events: auto; }
+        
+        .btn-v-tri { 
+            width: 70px; height: 70px; cursor: pointer; 
+            background: var(--viva-yellow); border: 4px solid var(--viva-blue);
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.2s; box-shadow: 5px 5px 0px var(--viva-pink);
+        }
+        .btn-v-tri:active { transform: scale(0.9); }
+        .btn-icon { color: var(--viva-blue); font-size: 24px; font-weight: 900; margin-top: 15px; }
 
         /* --- MTV VIEW --- */
         #mtv-view { position: absolute; inset: 0; display: none; background: #000; }
@@ -55,7 +65,6 @@
         .mtv-glass { position: absolute; inset: 0; z-index: 20; cursor: pointer; }
         .mtv-container.active-mode .mtv-glass { bottom: 120px; } 
 
-        /* MTV Info tiefer gesetzt */
         .mtv-top-info { position: absolute; top: 60px; left: 30px; z-index: 30; display: flex; align-items: center; pointer-events: none; transition: opacity 0.5s; }
         .mtv-container.active-mode .mtv-top-info { opacity: 0; }
         .mtv-day-label { background: var(--mtv-amber); color: #000; padding: 8px 18px; font-size: 2.2vw; font-weight: 900; margin-right: 12px; }
@@ -104,10 +113,16 @@
             <div class="rewind-text">rewind</div>
         </div>
         <div id="viva-tag"><div id="viva-title">VIVA REWIND</div></div>
+        
         <div class="viva-controls" id="viva-ui">
-            <button class="btn-v" onclick="zapToMusic(true); hideVivaUI()">ZAPP!</button>
-            <button id="fs-btn-viva" class="btn-v" onclick="toggleFS(); hideVivaUI()">FULLSCREEN</button>
+            <div class="btn-v-tri" onclick="zapToMusic(false); hideVivaUI()">
+                <div class="btn-icon">▶▶</div>
+            </div>
+            <div class="btn-v-tri" onclick="toggleFS(); hideVivaUI()">
+                <div class="btn-icon">⛶</div>
+            </div>
         </div>
+        
         <div id="container-music"><div id="player-music"></div></div>
         <div id="container-inter"><div id="player-inter"></div></div>
     </div>
@@ -139,14 +154,8 @@
         const interPlaylistId = 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl';
 
         function initPortalBgs() {
-            const vivaBgs = [
-                'https://images.unsplash.com/photo-1543900694-133f37abaaa5?w=1200',
-                'https://images.unsplash.com/photo-1514525253344-f20300977d12?w=1200'
-            ];
-            const mtvBgs = [
-                'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=1200',
-                'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200'
-            ];
+            const vivaBgs = ['https://images.unsplash.com/photo-1543900694-133f37abaaa5?w=1200', 'https://images.unsplash.com/photo-1514525253344-f20300977d12?w=1200'];
+            const mtvBgs = ['https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=1200', 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200'];
             const day = new Date().getDate();
             document.getElementById('bg-viva').style.backgroundImage = `url('${vivaBgs[day % vivaBgs.length]}')`;
             document.getElementById('bg-mtv').style.backgroundImage = `url('${mtvBgs[day % mtvBgs.length]}')`;
@@ -158,10 +167,7 @@
             document.getElementById('portal-overlay').style.display = 'flex';
             document.getElementById('viva-view').style.display = 'none';
             document.getElementById('mtv-view').style.display = 'none';
-            
-            // Fix: MTV Stop durch iframe-Reset
             document.getElementById('mtvFrame').src = "";
-            
             if (playerMusic) playerMusic.stopVideo();
             if (playerInter) playerInter.stopVideo();
         }
@@ -227,13 +233,14 @@
         function handleVivaUI() {
             const ui = document.getElementById('viva-ui');
             const menu = document.getElementById('menu-btn');
-            ui.style.opacity = 1; menu.style.opacity = 1;
+            ui.classList.add('show');
+            menu.style.opacity = 1;
             clearTimeout(uiTimer);
             uiTimer = setTimeout(() => { hideVivaUI(); }, 5000);
         }
 
         function hideVivaUI() {
-            document.getElementById('viva-ui').style.opacity = 0;
+            document.getElementById('viva-ui').classList.remove('show');
             document.getElementById('menu-btn').style.opacity = 0;
         }
 
@@ -269,7 +276,6 @@
         setInterval(() => {
             const now = new Date();
             const timeStr = now.toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
-            
             if (activeSystem === 'VIVA') {
                 document.getElementById('viva-clock').innerText = timeStr;
                 let currentPlayer = (mode === 'MUSIC') ? playerMusic : playerInter;
@@ -300,5 +306,4 @@
         }, 1000);
     </script>
 </body>
-                                                                    </html>
-                                                                    
+</html>
