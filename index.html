@@ -43,6 +43,7 @@
         #viva-tag { position: absolute; bottom: 25%; left: 0; z-index: 200; background: var(--viva-yellow); color: var(--viva-blue); padding: 15px 40px; border: 5px solid var(--viva-blue); box-shadow: 8px 8px 0px var(--viva-pink); transform: translateX(-110%); transition: 0.5s; pointer-events: none; }
         #viva-tag.show { transform: translateX(0); }
         
+        /* VIVA Controls & Buttons */
         .viva-controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 30px; opacity: 0; transition: 0.5s; pointer-events: none; }
         .viva-controls.show { opacity: 1; pointer-events: auto; }
         
@@ -59,12 +60,11 @@
             clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
         }
 
-        /* Button 2: Fullscreen (Spitze unten, gelb gefüllt) */
+        /* Button 2: Fullscreen (Spitze unten, gelb gefüllt, KEIN SCHATTEN) */
         #btn-fs-v {
             background: var(--viva-yellow);
             border: 4px solid var(--viva-blue);
             clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
-            box-shadow: 5px 5px 0px var(--viva-pink);
         }
 
         .btn-icon { color: var(--viva-blue); font-size: 22px; font-weight: 900; z-index: 10; }
@@ -161,8 +161,7 @@
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         let playerMusic, playerInter, uiTimer, mtvTimeout, activeSystem = null;
-        let mode = 'MUSIC', songsPlayed = 0, nextInterAfter = 2;
-        let lastTime = -1, hangCounter = 0;
+        let mode = 'MUSIC', songsPlayed = 0, nextInterAfter = 2, lastTime = -1, hangCounter = 0;
 
         const musicPlaylistId = 'PLfYJatUfKgnlRa5IM0KI_ll0UyhYItnU2';
         const interPlaylistId = 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl';
