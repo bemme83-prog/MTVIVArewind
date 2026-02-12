@@ -42,7 +42,9 @@
         .rewind-text { font-style: italic; font-size: 26px; color: var(--viva-yellow); margin-top: -8px; text-shadow: 2px 2px 0px var(--viva-blue); text-align: center; width: 100%; }
         #viva-tag { position: absolute; bottom: 25%; left: 0; z-index: 200; background: var(--viva-yellow); color: var(--viva-blue); padding: 15px 40px; border: 5px solid var(--viva-blue); box-shadow: 8px 8px 0px var(--viva-pink); transform: translateX(-110%); transition: 0.5s; pointer-events: none; }
         #viva-tag.show { transform: translateX(0); }
-        .viva-controls { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 10px; opacity: 0; transition: 0.5s; width: 90%; justify-content: center; }
+        
+        /* Buttons tiefer gesetzt */
+        .viva-controls { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 10px; opacity: 0; transition: 0.5s; width: 90%; justify-content: center; }
         .btn-v { background: var(--viva-blue); color: var(--viva-yellow); border: 4px solid var(--viva-yellow); padding: 15px 20px; font-size: 14px; cursor: pointer; flex: 1; max-width: 150px; font-weight: 900; text-transform: uppercase; }
 
         /* --- MTV VIEW --- */
@@ -53,7 +55,8 @@
         .mtv-glass { position: absolute; inset: 0; z-index: 20; cursor: pointer; }
         .mtv-container.active-mode .mtv-glass { bottom: 120px; } 
 
-        .mtv-top-info { position: absolute; top: 30px; left: 30px; z-index: 30; display: flex; align-items: center; pointer-events: none; transition: opacity 0.5s; }
+        /* MTV Info tiefer gesetzt */
+        .mtv-top-info { position: absolute; top: 60px; left: 30px; z-index: 30; display: flex; align-items: center; pointer-events: none; transition: opacity 0.5s; }
         .mtv-container.active-mode .mtv-top-info { opacity: 0; }
         .mtv-day-label { background: var(--mtv-amber); color: #000; padding: 8px 18px; font-size: 2.2vw; font-weight: 900; margin-right: 12px; }
 
@@ -102,8 +105,8 @@
         </div>
         <div id="viva-tag"><div id="viva-title">VIVA REWIND</div></div>
         <div class="viva-controls" id="viva-ui">
-            <button class="btn-v" onclick="zapToMusic(true)">ZAPP!</button>
-            <button id="fs-btn-viva" class="btn-v" onclick="toggleFS()">FULLSCREEN</button>
+            <button class="btn-v" onclick="zapToMusic(true); hideVivaUI()">ZAPP!</button>
+            <button id="fs-btn-viva" class="btn-v" onclick="toggleFS(); hideVivaUI()">FULLSCREEN</button>
         </div>
         <div id="container-music"><div id="player-music"></div></div>
         <div id="container-inter"><div id="player-inter"></div></div>
@@ -130,17 +133,23 @@
     <script>
         let playerMusic, playerInter, uiTimer, mtvTimeout, activeSystem = null;
         let mode = 'MUSIC', songsPlayed = 0, nextInterAfter = 2;
-        let lastTime = -1, hangCounter = 0; // Für Watchdog
+        let lastTime = -1, hangCounter = 0;
 
         const musicPlaylistId = 'PLfYJatUfKgnlRa5IM0KI_ll0UyhYItnU2';
         const interPlaylistId = 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl';
 
         function initPortalBgs() {
-            const vivaBgs = ['https://images.unsplash.com/photo-1543900694-133f37abaaa5?w=600'];
-            const mtvBgs = ['https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=600'];
-            const day = new Date().getDate() % vivaBgs.length;
-            document.getElementById('bg-viva').style.backgroundImage = `url('${vivaBgs[day]}')`;
-            document.getElementById('bg-mtv').style.backgroundImage = `url('${mtvBgs[day]}')`;
+            const vivaBgs = [
+                'https://images.unsplash.com/photo-1543900694-133f37abaaa5?w=1200',
+                'https://images.unsplash.com/photo-1514525253344-f20300977d12?w=1200'
+            ];
+            const mtvBgs = [
+                'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=1200',
+                'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200'
+            ];
+            const day = new Date().getDate();
+            document.getElementById('bg-viva').style.backgroundImage = `url('${vivaBgs[day % vivaBgs.length]}')`;
+            document.getElementById('bg-mtv').style.backgroundImage = `url('${mtvBgs[day % mtvBgs.length]}')`;
         }
         initPortalBgs();
 
@@ -149,6 +158,10 @@
             document.getElementById('portal-overlay').style.display = 'flex';
             document.getElementById('viva-view').style.display = 'none';
             document.getElementById('mtv-view').style.display = 'none';
+            
+            // Fix: MTV Stop durch iframe-Reset
+            document.getElementById('mtvFrame').src = "";
+            
             if (playerMusic) playerMusic.stopVideo();
             if (playerInter) playerInter.stopVideo();
         }
@@ -177,17 +190,11 @@
                          if (songsPlayed >= nextInterAfter) switchToInter(); else playerMusic.nextVideo();
                     }
                 },
-                'onError': (e) => { 
-                    console.log("Fehler im Musik-Player, überspringe...");
-                    setTimeout(() => playerMusic.nextVideo(), 2000);
-                }
+                'onError': () => setTimeout(() => playerMusic.nextVideo(), 2000)
             }});
             playerInter = new YT.Player('player-inter', { height: '100%', width: '100%', playerVars: pVars, events: {
                 'onStateChange': (e) => { if (e.data === YT.PlayerState.ENDED && mode === 'INTER') switchToMusic(); },
-                'onError': (e) => { 
-                    console.log("Fehler im Inter-Player, wechsle zurück...");
-                    setTimeout(() => switchToMusic(), 2000);
-                }
+                'onError': () => setTimeout(() => switchToMusic(), 2000)
             }});
         }
 
@@ -222,7 +229,12 @@
             const menu = document.getElementById('menu-btn');
             ui.style.opacity = 1; menu.style.opacity = 1;
             clearTimeout(uiTimer);
-            uiTimer = setTimeout(() => { ui.style.opacity = 0; menu.style.opacity = 0; }, 5000);
+            uiTimer = setTimeout(() => { hideVivaUI(); }, 5000);
+        }
+
+        function hideVivaUI() {
+            document.getElementById('viva-ui').style.opacity = 0;
+            document.getElementById('menu-btn').style.opacity = 0;
         }
 
         function toggleMtvInterface() {
@@ -247,19 +259,11 @@
         }
 
         function toggleFS() { 
-            const btnV = document.getElementById('fs-btn-viva');
-            const btnM = document.getElementById('fs-btn-mtv');
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().then(() => {
-                    if (screen.orientation && screen.orientation.lock) {
-                        screen.orientation.lock('landscape').catch(e => {});
-                    }
-                    btnV.innerText = "WINDOW MODE"; btnM.innerText = "WINDOW MODE";
+                    if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
                 });
-            } else { 
-                document.exitFullscreen();
-                btnV.innerText = "FULLSCREEN"; btnM.innerText = "FULLSCREEN";
-            }
+            } else { document.exitFullscreen(); }
         }
 
         setInterval(() => {
@@ -268,50 +272,33 @@
             
             if (activeSystem === 'VIVA') {
                 document.getElementById('viva-clock').innerText = timeStr;
-                
                 let currentPlayer = (mode === 'MUSIC') ? playerMusic : playerInter;
-                
                 if (currentPlayer && currentPlayer.getPlayerState) {
                     const state = currentPlayer.getPlayerState();
                     const currentTime = currentPlayer.getCurrentTime();
-
-                    // WATCHDOG: Falls Player auf PLAYING (1) steht, aber Zeit nicht läuft
                     if (state === 1) {
                         if (currentTime === lastTime) {
                             hangCounter++;
-                            if (hangCounter > 10) { // Nach 10 Sekunden Stillstand
-                                console.log("Player hängt, Neustart...");
+                            if (hangCounter > 10) { 
                                 if (mode === 'MUSIC') playerMusic.nextVideo(); else switchToMusic();
                                 hangCounter = 0;
                             }
-                        } else {
-                            hangCounter = 0;
-                        }
+                        } else { hangCounter = 0; }
                         lastTime = currentTime;
-                    }
-
-                    // NORMALER SWITCH (3 Sek vor Ende)
-                    if (state === 1) {
                         const duration = currentPlayer.getDuration();
-                        const timeLeft = duration - currentTime;
-                        if (duration > 0 && timeLeft <= 3 && timeLeft > 0) {
-                            if (mode === 'MUSIC') {
-                                songsPlayed++;
-                                if (songsPlayed >= nextInterAfter) switchToInter(); else playerMusic.nextVideo();
-                            } else {
-                                switchToMusic();
-                            }
+                        if (duration > 0 && (duration - currentTime) <= 3) {
+                            if (mode === 'MUSIC') { songsPlayed++; if (songsPlayed >= nextInterAfter) switchToInter(); else playerMusic.nextVideo(); }
+                            else { switchToMusic(); }
                         }
                     }
                 }
             } else if (activeSystem === 'MTV') {
                 document.getElementById('mtv-clock').innerText = timeStr;
                 document.getElementById('mtv-date').innerText = now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: '2-digit'});
-                const days = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"];
-                document.getElementById('mtv-weekday').innerText = days[now.getDay()];
+                document.getElementById('mtv-weekday').innerText = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"][now.getDay()];
             }
         }, 1000);
     </script>
 </body>
-                </html>
-                
+                                                                    </html>
+                                                                    
