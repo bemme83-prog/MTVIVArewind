@@ -43,19 +43,33 @@
         #viva-tag { position: absolute; bottom: 25%; left: 0; z-index: 200; background: var(--viva-yellow); color: var(--viva-blue); padding: 15px 40px; border: 5px solid var(--viva-blue); box-shadow: 8px 8px 0px var(--viva-pink); transform: translateX(-110%); transition: 0.5s; pointer-events: none; }
         #viva-tag.show { transform: translateX(0); }
         
-        /* VIVA Buttons als Dreiecke ganz unten */
         .viva-controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 30px; opacity: 0; transition: 0.5s; pointer-events: none; }
         .viva-controls.show { opacity: 1; pointer-events: auto; }
         
         .btn-v-tri { 
             width: 70px; height: 70px; cursor: pointer; 
-            background: var(--viva-yellow); border: 4px solid var(--viva-blue);
-            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
             display: flex; align-items: center; justify-content: center;
-            transition: 0.2s; box-shadow: 5px 5px 0px var(--viva-pink);
+            transition: 0.2s; position: relative;
         }
-        .btn-v-tri:active { transform: scale(0.9); }
-        .btn-icon { color: var(--viva-blue); font-size: 24px; font-weight: 900; margin-top: 15px; }
+
+        /* Button 1: Zapp (Spitze oben, durchsichtig, blauer Rand) */
+        #btn-zap-v {
+            background: transparent;
+            border: 4px solid var(--viva-blue);
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        }
+
+        /* Button 2: Fullscreen (Spitze unten, gelb gefüllt) */
+        #btn-fs-v {
+            background: var(--viva-yellow);
+            border: 4px solid var(--viva-blue);
+            clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+            box-shadow: 5px 5px 0px var(--viva-pink);
+        }
+
+        .btn-icon { color: var(--viva-blue); font-size: 22px; font-weight: 900; z-index: 10; }
+        #btn-zap-v .btn-icon { margin-top: 15px; color: #fff; text-shadow: 0 0 5px var(--viva-blue); }
+        #btn-fs-v .btn-icon { margin-bottom: 15px; }
 
         /* --- MTV VIEW --- */
         #mtv-view { position: absolute; inset: 0; display: none; background: #000; }
@@ -115,10 +129,10 @@
         <div id="viva-tag"><div id="viva-title">VIVA REWIND</div></div>
         
         <div class="viva-controls" id="viva-ui">
-            <div class="btn-v-tri" onclick="zapToMusic(false); hideVivaUI()">
+            <div id="btn-zap-v" class="btn-v-tri" onclick="zapToMusic(false); hideVivaUI()">
                 <div class="btn-icon">▶▶</div>
             </div>
-            <div class="btn-v-tri" onclick="toggleFS(); hideVivaUI()">
+            <div id="btn-fs-v" class="btn-v-tri" onclick="toggleFS(); hideVivaUI()">
                 <div class="btn-icon">⛶</div>
             </div>
         </div>
