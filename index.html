@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIVA REWIND v5.4 - Smart Watchdog</title>
+    <title>VIVA REWIND v5.5 - Rotation Mode</title>
     <style>
         :root { --viva-blue: #1a4a9e; --viva-yellow: #ffff00; --viva-pink: #ff00ff; }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #000; font-family: 'Arial Black', sans-serif; }
@@ -18,8 +18,7 @@
 <body>
 
     <div id="portal-overlay">
-        <div id="loading-status" style="color:white; margin-bottom:20px;">VIVA Engine wird geladen...</div>
-        <button id="main-btn" class="start-btn" onclick="startInfinity()" style="display:none;">VIVA STARTEN</button>
+        <button id="main-btn" class="start-btn" onclick="startInfinity()">VIVA STARTEN (Rotation 2-3)</button>
     </div>
 
     <div id="viva-view">
@@ -30,7 +29,6 @@
     </div>
 
     <script>
-        // API laden
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -42,13 +40,14 @@
         let currentClipId = "";
         let clipsInThisSession = 0; 
 
+        // ROTATION LOGIK
+        let songsPlayed = 0;
+        let songsUntilNextClip = Math.floor(Math.random() * 2) + 2; // Würfelt 2 oder 3
+
         const musicPL = 'PLfYJatUfKgnlRa5IM0KI_ll0UyhYItnU2';
         const interPL = 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl';
 
         function onYouTubeIframeAPIReady() {
-            document.getElementById('loading-status').style.display = 'none';
-            document.getElementById('main-btn').style.display = 'block';
-
             pMusic = new YT.Player('player-music', {
                 height: '100%', width: '100%',
                 playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, enablejsapi: 1 },
@@ -59,30 +58,28 @@
                 playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, enablejsapi: 1 },
                 events: { 'onStateChange': (e) => handleState(e, 'CLIP') }
             });
+            document.getElementById('main-btn').style.display = 'block';
         }
 
         function handleState(e, type) {
+            if (type === 'MUSIC' && e.data === YT.PlayerState.PLAYING) {
+                // Wenn ein neuer Song anfängt, den wir noch nicht gezählt haben
+                if (!fadeTriggered) {
+                    songsPlayed++;
+                    updateDebug(`Song ${songsPlayed} von ${songsUntilNextClip}`);
+                }
+            }
+
             if (type === 'CLIP') {
                 if (e.data === YT.PlayerState.PLAYING) {
                     let newId = extractId(e.target.getVideoUrl());
                     if (newId !== currentClipId) {
                         currentClipId = newId;
                         clipsInThisSession++;
-                        updateDebug(`Clip #${clipsInThisSession} erkannt.`);
-                        
-                        // Wenn Clip Nr. 2 startet, haben wir Clip 1 bereits gesehen (oder übersprungen)
-                        // -> Sofort zurück zur Musik!
-                        if (clipsInThisSession > 1) {
-                            updateDebug("ID-Wechsel (Clip 2) erkannt -> Erzwinge Musik.");
-                            switchToMusic();
-                        }
+                        if (clipsInThisSession > 1) switchToMusic();
                     }
                 }
-                // Reguläres Ende von Clip 1
-                if (e.data === YT.PlayerState.ENDED) {
-                    updateDebug("Clip regulär beendet.");
-                    switchToMusic();
-                }
+                if (e.data === YT.PlayerState.ENDED) switchToMusic();
             }
         }
 
@@ -98,7 +95,7 @@
             clipsInThisSession = 0;
             currentClipId = "";
             
-            const randomIdx = Math.floor(Math.random() * 45); // Zufälliger Clip
+            const randomIdx = Math.floor(Math.random() * 45);
             pInter.setVolume(0);
             pInter.loadPlaylist({ list: interPL, index: randomIdx });
             switchVisuals('CLIP', '6s');
@@ -116,17 +113,20 @@
         }
 
         function switchToMusic() {
-            if (currentMode === 'MUSIC') return;
             currentMode = 'MUSIC';
             fadeTriggered = false;
             
+            // Rotation Reset
+            songsPlayed = 0; 
+            songsUntilNextClip = Math.floor(Math.random() * 2) + 2; // Neu würfeln (2 oder 3)
+            
             pInter.stopVideo(); 
-            switchVisuals('MUSIC', '0.5s'); // Schneller Schnitt zurück
+            switchVisuals('MUSIC', '0.5s');
             
             pMusic.setVolume(100);
             pMusic.nextVideo();
             pMusic.playVideo();
-            updateDebug("Musik reaktiviert.");
+            updateDebug(`Nächster Block: ${songsUntilNextClip} Songs`);
         }
 
         function extractId(url) {
@@ -150,7 +150,12 @@
 
             if (currentMode === 'MUSIC' && pMusic && pMusic.getPlayerState && pMusic.getPlayerState() === 1) {
                 let timeLeft = pMusic.getDuration() - pMusic.getCurrentTime();
-                if (timeLeft <= 6 && !fadeTriggered) switchToClip();
+                
+                // Trigger nur, wenn die Anzahl der Songs erreicht ist
+                if (timeLeft <= 6 && !fadeTriggered && songsPlayed >= songsUntilNextClip) {
+                    switchToClip();
+                } 
+                // Falls Song zu Ende aber Limit noch nicht erreicht: YouTube macht einfach nextVideo (Playlist-Standard)
             }
         }, 500);
     </script>
