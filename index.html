@@ -45,7 +45,6 @@
         #viva-tag { position: absolute; bottom: 25%; left: 0; z-index: 200; background: var(--viva-yellow); color: var(--viva-blue); padding: 15px 40px; border: 5px solid var(--viva-blue); box-shadow: 8px 8px 0px var(--viva-pink); transform: translateX(-110%); transition: 0.5s; pointer-events: none; }
         #viva-tag.show { transform: translateX(0); }
         
-        /* DREIECKE DICHTER ZUSAMMEN */
         .viva-controls { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 8px; opacity: 0; transition: 0.5s; pointer-events: none; }
         .viva-controls.show { opacity: 1; pointer-events: auto; }
         
@@ -145,6 +144,8 @@
     <script>
         let playerMusic, playerInter, uiTimer, mtvTimeout, activeSystem = null;
         let mode = 'MUSIC', songsPlayed = 0, nextInterAfter = 2, lastTime = -1, hangCounter = 0;
+        let zapRetryCount = 0;
+
         const musicPlaylistId = 'PLfYJatUfKgnlRa5IM0KI_ll0UyhYItnU2';
         const interPlaylistId = 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl';
 
@@ -163,14 +164,15 @@
             document.getElementById('viva-view').style.display = 'none';
             document.getElementById('mtv-view').style.display = 'none';
             document.getElementById('mtvFrame').src = "";
-            if (playerMusic) playerMusic.stopVideo();
-            if (playerInter) playerInter.stopVideo();
+            if (playerMusic && playerMusic.stopVideo) playerMusic.stopVideo();
+            if (playerInter && playerInter.stopVideo) playerInter.stopVideo();
         }
 
         function launchViva() {
             activeSystem = 'VIVA';
             document.getElementById('portal-overlay').style.display = 'none';
             document.getElementById('viva-view').style.display = 'block';
+            zapRetryCount = 0;
             zapToMusic(true);
         }
 
@@ -185,7 +187,11 @@
             const pVars = { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, enablejsapi: 1, disablekb: 1 };
             playerMusic = new YT.Player('player-music', { height: '100%', width: '100%', playerVars: pVars, events: { 
                 'onStateChange': (e) => { 
-                    if (e.data === 5) { e.target.setShuffle(true); }
+                    if (e.data === 5) { 
+                        e.target.setShuffle(true); 
+                        // Falls Playlist geladen aber nicht gestartet: Force Play
+                        if(activeSystem === 'VIVA' && mode === 'MUSIC') e.target.playVideo();
+                    }
                     if (e.data === YT.PlayerState.PLAYING && mode === 'MUSIC') showVivaTag();
                     if (e.data === YT.PlayerState.ENDED && mode === 'MUSIC') {
                          songsPlayed++;
@@ -196,7 +202,7 @@
             }});
             playerInter = new YT.Player('player-inter', { height: '100%', width: '100%', playerVars: pVars, events: {
                 'onStateChange': (e) => { 
-                    if (e.data === 5) { e.target.setShuffle(true); }
+                    if (e.data === 5) { e.target.setShuffle(true); e.target.playVideo(); }
                     if (e.data === YT.PlayerState.ENDED && mode === 'INTER') switchToMusic(); 
                 },
                 'onError': () => setTimeout(() => switchToMusic(), 2000)
@@ -205,14 +211,24 @@
 
         function zapToMusic(firstLoad) {
             mode = 'MUSIC';
+            // Falls Player noch nicht bereit, retry
+            if (!playerMusic || !playerMusic.loadPlaylist) {
+                if (zapRetryCount < 10) {
+                    zapRetryCount++;
+                    setTimeout(() => zapToMusic(firstLoad), 500);
+                }
+                return;
+            }
+
             if (firstLoad) {
                 playerMusic.loadPlaylist({ list: musicPlaylistId, index: Math.floor(Math.random() * 300) });
+                playerMusic.playVideo(); // Force start
                 setTimeout(() => { if(playerMusic.setShuffle) playerMusic.setShuffle(true); }, 1500);
             } else { playerMusic.nextVideo(); }
         }
 
         function switchToInter() {
-            if (mode === 'INTER') return;
+            if (mode === 'INTER' || !playerInter.loadPlaylist) return;
             mode = 'INTER';
             document.getElementById('container-inter').classList.add('active');
             playerInter.loadPlaylist({ list: interPlaylistId, index: Math.floor(Math.random() * 40) });
@@ -300,5 +316,4 @@
         }, 1000);
     </script>
 </body>
-    </html>
-    
+</html>
