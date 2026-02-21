@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIVA REWIND v5.3 - Clip-Counter</title>
+    <title>VIVA REWIND v5.4 - Smart Watchdog</title>
     <style>
         :root { --viva-blue: #1a4a9e; --viva-yellow: #ffff00; --viva-pink: #ff00ff; }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #000; font-family: 'Arial Black', sans-serif; }
@@ -18,7 +18,7 @@
 <body>
 
     <div id="portal-overlay">
-        <div id="loading-status" style="color:white; margin-bottom:20px;">Lade VIVA API...</div>
+        <div id="loading-status" style="color:white; margin-bottom:20px;">VIVA Engine wird geladen...</div>
         <button id="main-btn" class="start-btn" onclick="startInfinity()" style="display:none;">VIVA STARTEN</button>
     </div>
 
@@ -30,6 +30,7 @@
     </div>
 
     <script>
+        // API laden
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -38,10 +39,8 @@
         let pMusic, pInter;
         let currentMode = 'MUSIC';
         let fadeTriggered = false;
-        
-        // NEU: Clip-Überwachung
         let currentClipId = "";
-        let clipsInThisSession = 0; // Zähler für Clips pro Ping-Pong
+        let clipsInThisSession = 0; 
 
         const musicPL = 'PLfYJatUfKgnlRa5IM0KI_ll0UyhYItnU2';
         const interPL = 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl';
@@ -68,29 +67,38 @@
                     let newId = extractId(e.target.getVideoUrl());
                     if (newId !== currentClipId) {
                         currentClipId = newId;
-                        clipsInThisSession++; // Ein neues Video hat im Clip-Player begonnen
-                        updateDebug(`Clip #${clipsInThisSession} läuft...`);
+                        clipsInThisSession++;
+                        updateDebug(`Clip #${clipsInThisSession} erkannt.`);
+                        
+                        // Wenn Clip Nr. 2 startet, haben wir Clip 1 bereits gesehen (oder übersprungen)
+                        // -> Sofort zurück zur Musik!
+                        if (clipsInThisSession > 1) {
+                            updateDebug("ID-Wechsel (Clip 2) erkannt -> Erzwinge Musik.");
+                            switchToMusic();
+                        }
                     }
                 }
+                // Reguläres Ende von Clip 1
                 if (e.data === YT.PlayerState.ENDED) {
-                    switchToMusic(); // Reguläres Ende triggert sofort Rücksprung
+                    updateDebug("Clip regulär beendet.");
+                    switchToMusic();
                 }
             }
         }
 
         function startInfinity() {
             document.getElementById('portal-overlay').style.display = 'none';
-            pMusic.loadPlaylist({ list: musicPL, index: Math.floor(Math.random() * 50) });
+            pMusic.loadPlaylist({ list: musicPL, index: Math.floor(Math.random() * 60) });
             switchVisuals('MUSIC', '0s');
         }
 
         function switchToClip() {
             currentMode = 'CLIP';
             fadeTriggered = true;
-            clipsInThisSession = 0; // Zähler resetten
+            clipsInThisSession = 0;
             currentClipId = "";
             
-            const randomIdx = Math.floor(Math.random() * 40);
+            const randomIdx = Math.floor(Math.random() * 45); // Zufälliger Clip
             pInter.setVolume(0);
             pInter.loadPlaylist({ list: interPL, index: randomIdx });
             switchVisuals('CLIP', '6s');
@@ -113,12 +121,12 @@
             fadeTriggered = false;
             
             pInter.stopVideo(); 
-            switchVisuals('MUSIC', '0.5s');
+            switchVisuals('MUSIC', '0.5s'); // Schneller Schnitt zurück
             
             pMusic.setVolume(100);
             pMusic.nextVideo();
             pMusic.playVideo();
-            updateDebug("Zurück zur Musik!");
+            updateDebug("Musik reaktiviert.");
         }
 
         function extractId(url) {
@@ -140,26 +148,9 @@
         setInterval(() => {
             document.getElementById('viva-clock').innerText = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
 
-            // Musik-Modus: Warte auf Crossfade
             if (currentMode === 'MUSIC' && pMusic && pMusic.getPlayerState && pMusic.getPlayerState() === 1) {
                 let timeLeft = pMusic.getDuration() - pMusic.getCurrentTime();
                 if (timeLeft <= 6 && !fadeTriggered) switchToClip();
-            }
-
-            // Clip-Modus: Überwachung
-            if (currentMode === 'CLIP' && pInter && pInter.getPlayerState) {
-                // FALLBACK 1: Video-ID hat gewechselt
-                let checkId = extractId(pInter.getVideoUrl());
-                if (currentClipId !== "" && checkId !== "" && checkId !== currentClipId) {
-                    // Falls schon der zweite Clip läuft (oder gerade Clip 3 laden will) -> ABBRUCH
-                    if (clipsInThisSession >= 2) {
-                        updateDebug("Limit erreicht! Erzwinge Musik.");
-                        switchToMusic();
-                    }
-                }
-                
-                // FALLBACK 2: Zeitlimit (60 Sek), falls gar nichts mehr geht
-                // (Optional, hier zur Sicherheit drin gelassen)
             }
         }, 500);
     </script>
