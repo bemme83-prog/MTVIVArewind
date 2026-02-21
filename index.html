@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIVA REWIND v5.1 - The Enforcer</title>
+    <title>VIVA REWIND v5.2 - API Force</title>
     <style>
         :root { --viva-blue: #1a4a9e; --viva-yellow: #ffff00; --viva-pink: #ff00ff; }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #000; font-family: 'Arial Black', sans-serif; }
@@ -17,17 +17,25 @@
 </head>
 <body>
 
-    <div id="portal-overlay"><button class="start-btn" onclick="startInfinity()">VIVA STARTEN (v5.1)</button></div>
+    <div id="portal-overlay">
+        <button id="main-btn" class="start-btn" onclick="startInfinity()" style="display:none;">VIVA STARTEN</button>
+        <div id="loading-status" style="color:white;">Lade API...</div>
+    </div>
 
     <div id="viva-view">
         <div id="viva-clock" class="viva-clock">00:00</div>
-        <div id="debug">System bereit.</div>
+        <div id="debug">Initialisiere...</div>
         <div id="div-music" class="player-container"><div id="player-music"></div></div>
         <div id="div-inter" class="player-container"><div id="player-inter"></div></div>
     </div>
 
-    <script src="https://www.youtube.com/iframe_api"></script>
     <script>
+        // API Lade-Logik (Robust)
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
         let pMusic, pInter;
         let currentMode = 'MUSIC';
         let fadeTriggered = false;
@@ -38,15 +46,20 @@
         const interPL = 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl';
 
         function onYouTubeIframeAPIReady() {
+            console.log("API Ready");
+            document.getElementById('loading-status').style.display = 'none';
+            document.getElementById('main-btn').style.display = 'block';
+            updateDebug("API geladen.");
+
             pMusic = new YT.Player('player-music', {
                 height: '100%', width: '100%',
-                playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, enablejsapi: 1 },
-                events: { 'onStateChange': (e) => handleState(e, 'MUSIC') }
+                playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, enablejsapi: 1, origin: window.location.origin },
+                events: { 'onStateChange': (e) => handleState(e, 'MUSIC'), 'onReady': () => console.log("Music Ready") }
             });
             pInter = new YT.Player('player-inter', {
                 height: '100%', width: '100%',
-                playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, enablejsapi: 1 },
-                events: { 'onStateChange': (e) => handleState(e, 'CLIP') }
+                playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, enablejsapi: 1, origin: window.location.origin },
+                events: { 'onStateChange': (e) => handleState(e, 'CLIP'), 'onReady': () => console.log("Inter Ready") }
             });
         }
 
@@ -54,12 +67,13 @@
             document.getElementById('portal-overlay').style.display = 'none';
             pMusic.loadPlaylist({ list: musicPL, index: Math.floor(Math.random() * 50) });
             switchVisuals('MUSIC', '0s');
+            updateDebug("Infinity Mode v5.2 gestartet.");
         }
 
         function handleState(e, type) {
             if (type === 'CLIP' && e.data === YT.PlayerState.PLAYING) {
                 lastClipId = extractId(e.target.getVideoUrl());
-                clipStartTime = Date.now(); // Zeitstempel beim Start des Clips
+                clipStartTime = Date.now();
                 updateDebug("Clip aktiv: " + lastClipId);
             }
             if (type === 'CLIP' && e.data === YT.PlayerState.ENDED) {
@@ -89,18 +103,15 @@
         }
 
         function switchToMusic() {
-            if (currentMode === 'MUSIC') return;
             currentMode = 'MUSIC';
             fadeTriggered = false;
             lastClipId = "";
-
-            pInter.stopVideo(); // Zerstört die aktuelle Clip-Wiedergabe
+            pInter.stopVideo();
             switchVisuals('MUSIC', '0.5s');
-            
             pMusic.setVolume(100);
             pMusic.nextVideo();
             pMusic.playVideo();
-            updateDebug("Zurück zur Musik.");
+            updateDebug("Musik reaktiviert.");
         }
 
         function extractId(url) {
@@ -122,25 +133,22 @@
         setInterval(() => {
             document.getElementById('viva-clock').innerText = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
 
-            if (currentMode === 'MUSIC' && pMusic && pMusic.getPlayerState() === 1) {
+            if (currentMode === 'MUSIC' && pMusic && pMusic.getPlayerState && pMusic.getPlayerState() === 1) {
                 let timeLeft = pMusic.getDuration() - pMusic.getCurrentTime();
                 if (timeLeft <= 6 && !fadeTriggered) switchToClip();
             }
 
-            if (currentMode === 'CLIP' && pInter && pInter.getPlayerState) {
+            if (currentMode === 'CLIP' && pInter && pInter.getPlayerState && pInter.getPlayerState() === 1) {
                 const nowId = extractId(pInter.getVideoUrl());
                 const elapsed = (Date.now() - clipStartTime) / 1000;
 
-                // 1. ID-Watcher: Hat YouTube das Video gewechselt?
+                // ID-Watcher + Zeit-Limit (erhöhte Sensibilität)
                 if (lastClipId !== "" && nowId !== "" && nowId !== lastClipId) {
-                    updateDebug("ID-Abweichung! Erzwinge Rücksprung.");
+                    updateDebug("ID Wechsel erkannt -> Musik!");
                     switchToMusic();
                 }
-
-                // 2. Zeit-Enforcer: Läuft der Clip länger als 45 Sekunden? (Deine Clips sind ja < 10s)
-                // Das fängt Hänger ab, in denen YouTube gar keine neue ID meldet.
-                if (elapsed > 45) {
-                    updateDebug("Zeit-Limit erreicht! Erzwinge Musik.");
+                if (elapsed > 30) { // Ein Clip darf max 30 Sek laufen
+                    updateDebug("Zeit-Limit (30s) -> Musik!");
                     switchToMusic();
                 }
             }
