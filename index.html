@@ -3,319 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIVA & MTV - Master v4.1</title>
+    <title>VIVA & MTV - Master v4.5</title>
     <style>
-        :root { 
-            --viva-blue: #1a4a9e; --viva-yellow: #ffff00; --viva-pink: #ff00ff; 
-            --mtv-neon: #ccff00; --mtv-amber: #ffcc00; 
-        }
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: black; font-family: 'Arial Black', sans-serif; -webkit-tap-highlight-color: transparent; }
+        :root { --viva-blue: #1a4a9e; --viva-yellow: #ffff00; --viva-pink: #ff00ff; --mtv-amber: #ffcc00; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: black; font-family: 'Arial Black', sans-serif; }
 
-        /* --- PORTAL --- */
-        #portal-overlay {
-            position: fixed; inset: 0; z-index: 20000;
-            background: radial-gradient(circle, #222 0%, #000 100%);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-        .portal-grid { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; width: 90%; }
-        .retro-card { 
-            position: relative; width: 340px; height: 190px; 
-            background: #111; border: 4px solid #444; border-radius: 15px; 
-            overflow: hidden; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            box-sizing: border-box; touch-action: manipulation;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-        }
-        .retro-card:hover { transform: scale(1.08); border-color: #fff; box-shadow: 0 0 30px rgba(255,255,255,0.2); }
-        .retro-card:active { transform: scale(0.95); }
-        .preview-content { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.6; transition: 0.3s; background-color: #222; }
-        .card-label { position: absolute; bottom: 20px; left: 20px; color: #fff; font-size: 22px; text-shadow: 2px 2px 4px #000; z-index: 2; letter-spacing: 2px; }
-        .version-tag { position: absolute; bottom: 15px; right: 20px; color: #444; font-family: sans-serif; font-size: 10px; letter-spacing: 1px; }
+        /* Portal & UI */
+        #portal-overlay { position: fixed; inset: 0; z-index: 20000; background: radial-gradient(circle, #222 0%, #000 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .portal-grid { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+        .retro-card { width: 340px; height: 190px; background: #111; border: 4px solid #444; border-radius: 15px; cursor: pointer; position: relative; overflow: hidden; transition: 0.3s; }
+        .retro-card:hover { transform: scale(1.05); border-color: #fff; }
+        .card-label { position: absolute; bottom: 20px; left: 20px; color: #fff; font-size: 22px; text-shadow: 2px 2px 4px #000; }
+        .version-tag { position: absolute; bottom: 15px; right: 20px; color: #444; font-size: 10px; }
 
-        #menu-btn {
-            position: absolute; top: 25px; right: 25px; z-index: 25000;
-            background: rgba(0,0,0,0.8); border: 2px solid #fff; color: #fff;
-            padding: 12px 20px; font-size: 14px; cursor: pointer; opacity: 0; transition: 0.4s; border-radius: 8px;
-        }
-
-        /* --- VIVA VIEW --- */
+        /* VIVA View */
         #viva-view { position: absolute; inset: 0; display: none; background: #000; }
-        .viva-click-shield { position: absolute; inset: 0; z-index: 15; background: transparent; }
-        .viva-clock-container { position: absolute; top: 30px; left: 35px; z-index: 100; display: flex; align-items: center; gap: 15px; }
+        .viva-clock-container { position: absolute; top: 30px; left: 35px; z-index: 100; display: flex; align-items: center; gap: 10px; }
         .viva-clock { font-size: 28px; color: var(--viva-yellow); text-shadow: 3px 3px 0px var(--viva-blue); }
-        .viva-refresh-btn { 
-            background: var(--viva-blue); color: #fff; border: 2px solid var(--viva-yellow); 
-            border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 18px; opacity: 0; transition: 0.3s;
-        }
-        .viva-controls.show ~ .viva-clock-container .viva-refresh-btn { opacity: 1; }
-
-        .viva-header { position: absolute; top: 30px; right: 30px; z-index: 100; transform: scale(0.65); transform-origin: right top; }
-        .rewind-text { font-style: italic; font-size: 26px; color: var(--viva-yellow); margin-top: -8px; text-shadow: 2px 2px 0px var(--viva-blue); text-align: center; width: 100%; }
+        .viva-refresh { background: var(--viva-blue); color: #fff; border: 2px solid var(--viva-yellow); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: 0.3s; }
+        
         #viva-tag { position: absolute; bottom: 25%; left: 0; z-index: 200; background: var(--viva-yellow); color: var(--viva-blue); padding: 15px 40px; border: 5px solid var(--viva-blue); box-shadow: 8px 8px 0px var(--viva-pink); transform: translateX(-110%); transition: 0.5s; pointer-events: none; }
         #viva-tag.show { transform: translateX(0); }
         
-        .viva-controls { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 8px; opacity: 0; transition: 0.5s; pointer-events: none; }
-        .viva-controls.show { opacity: 1; pointer-events: auto; }
-        .btn-v-tri-svg { width: 90px; height: 90px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .btn-v-tri-svg svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-        .btn-icon-v { position: relative; z-index: 10; font-weight: 900; pointer-events: none; display: flex; align-items: center; justify-content: center; }
-        .icon-skip { font-size: 24px; color: white; margin-top: -15px; }
-        .icon-fs { font-size: 28px; color: var(--viva-blue); margin-bottom: -15px; }
+        .viva-controls { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 20px; opacity: 0; transition: 0.5s; }
+        .show-ui { opacity: 1 !important; }
 
-        /* --- MTV VIEW --- */
-        #mtv-view { position: absolute; inset: 0; display: none; background: #000; }
-        .mtv-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
-        .mtv-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; transform: translateY(10%); transition: transform 0.5s ease; }
-        .mtv-container.active-mode iframe { transform: translateY(0%); }
-        .mtv-glass { position: absolute; inset: 0; z-index: 20; cursor: pointer; }
-        .mtv-top-info { position: absolute; top: 60px; left: 30px; z-index: 30; display: flex; align-items: center; pointer-events: none; transition: opacity 0.5s; }
-        .mtv-day-label { background: var(--mtv-amber); color: #000; padding: 8px 18px; font-size: 2.2vw; font-weight: 900; margin-right: 12px; }
-        .mtv-controls { position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%); z-index: 1000; opacity: 0; transition: 0.5s; display: flex; justify-content: center; width: auto; pointer-events: none; }
-        .mtv-container.active-mode .mtv-controls { opacity: 1; pointer-events: auto; }
-        .btn-mtv { background: var(--mtv-amber); color: #000; border: none; padding: 15px 30px; font-size: 16px; cursor: pointer; font-weight: 900; text-transform: uppercase; border-radius: 4px; box-shadow: 4px 4px 0px #000; }
-
-        .triangle-logo-svg { width: 60px; height: 55px; margin-left: -30px; }
-        .triangle-logo-svg:first-child { margin-left: 0; }
-        .t-shape { stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; fill: none; }
-
-        #container-music { position: absolute; inset: 0; z-index: 10; }
+        #container-music { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+        .click-shield { position: absolute; inset: 0; z-index: 15; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <button id="menu-btn" onclick="showPortal()">KANAL WECHSELN</button>
-
     <div id="portal-overlay">
-        <h2 style="color:white; margin-bottom:40px; letter-spacing:5px;">CHANNEL SELECTION</h2>
         <div class="portal-grid">
-            <div class="retro-card" onclick="launchViva()">
-                <div id="bg-viva" class="preview-content"></div>
-                <div class="card-label">VIVA REWIND</div>
-            </div>
-            <div class="retro-card" onclick="launchMtv()">
-                <div id="bg-mtv" class="preview-content"></div>
-                <div class="card-label">MTV REWIND</div>
-            </div>
+            <div class="retro-card" onclick="launch('VIVA')"><div class="card-label">VIVA REWIND</div></div>
+            <div class="retro-card" onclick="launch('MTV')"><div class="card-label">MTV REWIND</div></div>
         </div>
-        <div class="version-tag">v4.1-hybrid-fix-2026</div>
+        <div class="version-tag">v4.5-force-landscape-2026</div>
     </div>
 
     <div id="viva-view">
-        <div class="viva-click-shield" onclick="handleVivaUI()"></div>
+        <div class="click-shield" onclick="toggleUI()"></div>
         <div class="viva-clock-container">
             <div id="viva-clock" class="viva-clock">00:00</div>
-            <div class="viva-refresh-btn" onclick="zapToMusic(true)" title="Stream Refresh">↺</div>
-        </div>
-        <div class="viva-header">
-            <div style="display:flex; padding-left:25px;">
-                <svg class="triangle-logo-svg" viewBox="0 0 100 100"><path class="t-shape" style="stroke:var(--viva-blue)" d="M15,25 L85,25 L50,85 Z"/></svg>
-                <svg class="triangle-logo-svg" viewBox="0 0 100 100"><path class="t-shape" style="stroke:var(--viva-blue); fill:var(--viva-yellow)" d="M15,75 L85,75 L50,15 Z"/></svg>
-                <svg class="triangle-logo-svg" viewBox="0 0 100 100"><path class="t-shape" style="stroke:var(--viva-blue)" d="M15,25 L85,25 L50,85 Z"/></svg>
-                <svg class="triangle-logo-svg" viewBox="0 0 100 100"><path class="t-shape" style="stroke:var(--viva-blue)" d="M15,75 L85,75 L50,15 Z"/></svg>
-            </div>
-            <div class="rewind-text">rewind</div>
+            <div class="viva-refresh" id="ref-btn" onclick="zap(true)">↺</div>
         </div>
         <div id="viva-tag"><div id="viva-title">VIVA REWIND</div></div>
         <div class="viva-controls" id="viva-ui">
-            <div class="btn-v-tri-svg" onclick="zapToMusic(false); hideVivaUI()">
-                <svg viewBox="0 0 100 100"><path d="M50 90 L92 10 L8 10 Z" fill="transparent" stroke="#1a4a9e" stroke-width="6" stroke-linejoin="round"/></svg>
-                <div class="btn-icon-v icon-skip">▶▶</div>
-            </div>
-            <div class="btn-v-tri-svg" onclick="toggleFS(); hideVivaUI()">
-                <svg viewBox="0 0 100 100"><path d="M50 10 L92 90 L8 90 Z" fill="#ffff00" stroke="#1a4a9e" stroke-width="6" stroke-linejoin="round"/></svg>
-                <div class="btn-icon-v icon-fs">⛶</div>
-            </div>
+            <button onclick="zap(false)" style="padding:10px 20px; background:var(--viva-blue); color:white; border:2px solid #fff;">NEXT</button>
+            <button onclick="toggleFS()" style="padding:10px 20px; background:var(--viva-yellow); color:black; border:2px solid #000;">FULLSCREEN</button>
         </div>
-        <div id="container-music"><div id="player-music"></div></div>
-    </div>
-
-    <div id="mtv-view">
-        <div id="mtvMainContainer" class="mtv-container">
-            <div class="mtv-glass" onclick="toggleMtvInterface()"></div>
-            <iframe id="mtvFrame" src="" allow="autoplay; fullscreen"></iframe>
-            <div class="mtv-top-info">
-                <div id="mtv-weekday" class="mtv-day-label">--</div>
-                <div style="color:white; text-shadow: 2px 2px 4px #000; line-height: 1.1;">
-                    <div id="mtv-clock" style="font-size: 24px;">00:00</div>
-                    <div id="mtv-date" style="font-size: 14px; color: var(--mtv-amber);">01.01.26</div>
-                </div>
-            </div>
-            <div class="mtv-controls">
-                <button id="fs-btn-mtv" class="btn-mtv" onclick="toggleFS()">FULLSCREEN</button>
-            </div>
-        </div>
+        <div id="container-music"><div id="player"></div></div>
     </div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-        let playerMusic, uiTimer, mtvTimeout, activeSystem = null;
-        let lastTime = -1, hangCounter = 0, zapRetryCount = 0;
-        let mode = 'MUSIC';
-        let songsPlayed = 0;
-        let nextInterAfter = Math.floor(Math.random() * 2) + 2;
+        let player, uiTimer, activeSystem = null;
+        let lastTime = -1, hangCounter = 0;
+        let isClipMode = false;
+        let songCounter = 0;
 
-        const musicPlaylistId = 'PLfYJatUfKgnlRa5IM0KI_ll0UyhYItnU2';
-        const interPlaylistId = 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl';
+        const musicPL = 'PLfYJatUfKgnlRa5IM0KI_ll0UyhYItnU2';
+        // Aktuelle Clip-IDs (direkt für maximale Stabilität)
+        const clipIds = ['S1vH0f-X5X0', 'Xq-lnR_I8sk', 'W7m9L8eS-E4', '9j-xLp2U984', '3Wp66270_Sg'];
 
-        function initPortalBgs() {
-            const vivaBgs = ['https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=800','https://images.unsplash.com/photo-1514525253344-f20300977d12?w=800','https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800'];
-            const mtvBgs = ['https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800','https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800','https://images.unsplash.com/photo-1459749411177-042180ce673c?w=800'];
-            const day = new Date().getDate();
-            document.getElementById('bg-viva').style.backgroundImage = `url('${vivaBgs[day % vivaBgs.length]}')`;
-            document.getElementById('bg-mtv').style.backgroundImage = `url('${mtvBgs[day % mtvBgs.length]}')`;
-        }
-        initPortalBgs();
-
-        function showPortal() {
-            activeSystem = null;
-            document.getElementById('portal-overlay').style.display = 'flex';
-            document.getElementById('viva-view').style.display = 'none';
-            document.getElementById('mtv-view').style.display = 'none';
-            document.getElementById('mtvFrame').src = "";
-            if (playerMusic && playerMusic.stopVideo) playerMusic.stopVideo();
-        }
-
-        function launchViva() {
-            activeSystem = 'VIVA';
+        function launch(sys) {
+            activeSystem = sys;
             document.getElementById('portal-overlay').style.display = 'none';
-            document.getElementById('viva-view').style.display = 'block';
-            zapRetryCount = 0;
-            zapToMusic(true);
-        }
-
-        function launchMtv() {
-            activeSystem = 'MTV';
-            document.getElementById('portal-overlay').style.display = 'none';
-            document.getElementById('mtv-view').style.display = 'block';
-            document.getElementById('mtvFrame').src = "https://wantmymtv.xyz/embed.html?channel=mtv_80s&autoplay=1&muted=0";
+            if(sys === 'VIVA') {
+                document.getElementById('viva-view').style.display = 'block';
+                zap(true);
+            }
         }
 
         function onYouTubeIframeAPIReady() {
-            playerMusic = new YT.Player('player-music', { 
-                height: '100%', width: '100%', 
-                playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, enablejsapi: 1, disablekb: 1 }, 
-                events: { 
-                    'onStateChange': (e) => { 
-                        if (e.data === 5) { 
-                            if(activeSystem === 'VIVA') e.target.playVideo();
-                        }
+            player = new YT.Player('player', {
+                height: '100%', width: '100%',
+                playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, enablejsapi: 1 },
+                events: {
+                    'onStateChange': (e) => {
                         if (e.data === YT.PlayerState.PLAYING) {
-                            if(mode === 'MUSIC') showVivaTag();
                             hangCounter = 0;
+                            if(!isClipMode) showTag(e.target.getVideoData().title);
                         }
-                        if (e.data === YT.PlayerState.ENDED) { 
-                            handleEnd();
+                        if (e.data === YT.PlayerState.ENDED) {
+                            if (isClipMode) {
+                                returnToMusic();
+                            } else {
+                                songCounter++;
+                                if(songCounter >= 2) { // Alle 2 Songs ein Clip
+                                    playClip();
+                                } else {
+                                    player.nextVideo();
+                                }
+                            }
                         }
                     },
-                    'onError': () => { 
-                        console.log("Fehler erkannt - wechsle...");
-                        if (mode === 'INTER') switchToMusic(); else playerMusic.nextVideo();
-                    }
+                    'onError': () => { returnToMusic(); }
                 }
             });
         }
 
-        function handleEnd() {
-            if (mode === 'MUSIC') {
-                songsPlayed++;
-                if (songsPlayed >= nextInterAfter) {
-                    switchToInter();
-                } else {
-                    playerMusic.nextVideo();
-                }
-            } else {
-                switchToMusic();
-            }
+        function playClip() {
+            isClipMode = true;
+            const randomClip = clipIds[Math.floor(Math.random() * clipIds.length)];
+            player.loadVideoById(randomClip);
         }
 
-        function switchToInter() {
-            mode = 'INTER';
-            const randomIdx = Math.floor(Math.random() * 30);
-            playerMusic.loadPlaylist({ list: interPlaylistId, index: randomIdx });
+        function returnToMusic() {
+            isClipMode = false;
+            songCounter = 0;
+            player.loadPlaylist({ list: musicPL, index: Math.floor(Math.random() * 200) });
         }
 
-        function switchToMusic() {
-            mode = 'MUSIC';
-            songsPlayed = 0;
-            nextInterAfter = Math.floor(Math.random() * 2) + 2;
-            const randomIdx = Math.floor(Math.random() * 200);
-            playerMusic.loadPlaylist({ list: musicPlaylistId, index: randomIdx });
+        function zap(first) {
+            isClipMode = false;
+            songCounter = 0;
+            player.loadPlaylist({ list: musicPL, index: Math.floor(Math.random() * 200) });
+            player.setShuffle(true);
         }
 
-        function zapToMusic(force) {
-            if (!playerMusic || !playerMusic.loadPlaylist) return;
-            mode = 'MUSIC';
-            songsPlayed = 0;
-            const idx = Math.floor(Math.random() * 250);
-            playerMusic.loadPlaylist({ list: musicPlaylistId, index: idx });
-            playerMusic.playVideo();
+        function showTag(t) {
+            if(!t || isClipMode) return;
+            document.getElementById('viva-title').innerText = t;
+            const tag = document.getElementById('viva-tag');
+            tag.classList.add('show');
+            setTimeout(() => tag.classList.remove('show'), 8000);
         }
 
-        function handleVivaUI() {
-            const ui = document.getElementById('viva-ui');
-            const menu = document.getElementById('menu-btn');
-            ui.classList.add('show'); menu.style.opacity = 1;
+        function toggleUI() {
+            document.getElementById('viva-ui').classList.add('show-ui');
+            document.getElementById('ref-btn').style.opacity = 1;
             clearTimeout(uiTimer);
-            uiTimer = setTimeout(() => { hideVivaUI(); }, 5000);
+            uiTimer = setTimeout(() => {
+                document.getElementById('viva-ui').classList.remove('show-ui');
+                document.getElementById('ref-btn').style.opacity = 0;
+            }, 5000);
         }
 
-        function hideVivaUI() {
-            document.getElementById('viva-ui').classList.remove('show');
-            document.getElementById('menu-btn').style.opacity = 0;
-        }
-
-        function toggleMtvInterface() {
-            const container = document.getElementById('mtvMainContainer');
-            const menu = document.getElementById('menu-btn');
-            if (!container.classList.contains('active-mode')) {
-                container.classList.add('active-mode'); menu.style.opacity = 1;
-                mtvTimeout = setTimeout(() => { container.classList.remove('active-mode'); menu.style.opacity = 0; }, 8000);
-            } else {
-                container.classList.remove('active-mode'); menu.style.opacity = 0; clearTimeout(mtvTimeout);
-            }
-        }
-
-        function showVivaTag() {
-            try {
-                const title = playerMusic.getVideoData().title;
-                if (!title || mode !== 'MUSIC') return;
-                document.getElementById('viva-title').innerText = title;
-                document.getElementById('viva-tag').classList.add('show');
-                setTimeout(() => document.getElementById('viva-tag').classList.remove('show'), 8000);
-            } catch(e) {}
-        }
-
-        function toggleFS() { 
+        function toggleFS() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else { document.exitFullscreen(); }
+                document.documentElement.requestFullscreen().then(() => {
+                    if (screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').catch(e => console.log("Orientation lock blocked"));
+                    }
+                });
+            } else {
+                document.exitFullscreen();
+            }
         }
 
         setInterval(() => {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
-            if (activeSystem === 'VIVA') {
-                document.getElementById('viva-clock').innerText = timeStr;
-                if (playerMusic && playerMusic.getPlayerState) {
-                    const state = playerMusic.getPlayerState();
-                    const currentTime = playerMusic.getCurrentTime();
-                    // Hang-Check (4 Sek)
-                    if (state === 3 || state === -1 || (state === 1 && currentTime === lastTime)) {
-                        hangCounter++;
-                        if (hangCounter > 4) { 
-                            if (mode === 'INTER') switchToMusic(); else playerMusic.nextVideo();
-                            hangCounter = 0;
-                        }
-                    } else if (state === 1) {
-                        hangCounter = 0; lastTime = currentTime;
+            if(activeSystem === 'VIVA' && player && player.getPlayerState) {
+                document.getElementById('viva-clock').innerText = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+                
+                const state = player.getPlayerState();
+                const cur = player.getCurrentTime();
+                
+                // Hang-Check 4 Sek
+                if(state === 3 || state === -1 || (state === 1 && cur === lastTime)) {
+                    hangCounter++;
+                    if(hangCounter > 4) {
+                        if(isClipMode) returnToMusic(); else player.nextVideo();
+                        hangCounter = 0;
                     }
+                } else if(state === 1) {
+                    hangCounter = 0;
+                    lastTime = cur;
                 }
-            } else if (activeSystem === 'MTV') {
-                document.getElementById('mtv-clock').innerText = timeStr;
-                document.getElementById('mtv-date').innerText = now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: '2-digit'});
-                document.getElementById('mtv-weekday').innerText = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"][now.getDay()];
             }
         }, 1000);
     </script>
 </body>
-</html>
+                </html>
+                
