@@ -73,9 +73,7 @@
         .triangle-logo-svg:first-child { margin-left: 0; }
         .t-shape { stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; fill: none; }
 
-        #container-music { position: absolute; inset: 0; z-index: 10; transition: opacity 0.8s; }
-        #container-inter { position: absolute; inset: 0; z-index: 5; opacity: 0; transition: opacity 0.8s; }
-        #container-inter.active { z-index: 20; opacity: 1; }
+        #container-music { position: absolute; inset: 0; z-index: 10; }
     </style>
 </head>
 <body>
@@ -120,7 +118,6 @@
             </div>
         </div>
         <div id="container-music"><div id="player-music"></div></div>
-        <div id="container-inter"><div id="player-inter"></div></div>
     </div>
 
     <div id="mtv-view">
@@ -142,12 +139,9 @@
 
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-        let playerMusic, playerInter, uiTimer, mtvTimeout, activeSystem = null;
-        let mode = 'MUSIC', songsPlayed = 0, nextInterAfter = 2, lastTime = -1, hangCounter = 0;
-        let zapRetryCount = 0;
-
+        let playerMusic, uiTimer, mtvTimeout, activeSystem = null;
+        let lastTime = -1, hangCounter = 0, zapRetryCount = 0;
         const musicPlaylistId = 'PLfYJatUfKgnlRa5IM0KI_ll0UyhYItnU2';
-        const interPlaylistId = 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl';
 
         function initPortalBgs() {
             const vivaBgs = ['https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=800','https://images.unsplash.com/photo-1514525253344-f20300977d12?w=800','https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800'];
@@ -165,7 +159,6 @@
             document.getElementById('mtv-view').style.display = 'none';
             document.getElementById('mtvFrame').src = "";
             if (playerMusic && playerMusic.stopVideo) playerMusic.stopVideo();
-            if (playerInter && playerInter.stopVideo) playerInter.stopVideo();
         }
 
         function launchViva() {
@@ -184,70 +177,35 @@
         }
 
         function onYouTubeIframeAPIReady() {
-            const pVars = { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, enablejsapi: 1, disablekb: 1 };
-            playerMusic = new YT.Player('player-music', { height: '100%', width: '100%', playerVars: pVars, events: { 
-                'onStateChange': (e) => { 
-                    if (e.data === 5) { 
-                        e.target.setShuffle(true); 
-                        if(activeSystem === 'VIVA' && mode === 'MUSIC') e.target.playVideo();
-                    }
-                    if (e.data === YT.PlayerState.PLAYING && mode === 'MUSIC') showVivaTag();
-                    if (e.data === YT.PlayerState.ENDED && mode === 'MUSIC') {
-                         songsPlayed++;
-                         if (songsPlayed >= nextInterAfter) switchToInter(); else playerMusic.nextVideo();
-                    }
-                },
-                'onError': () => setTimeout(() => playerMusic.nextVideo(), 2000)
-            }});
-            playerInter = new YT.Player('player-inter', { height: '100%', width: '100%', playerVars: pVars, events: {
-                'onStateChange': (e) => { 
-                    if (e.data === 5) { e.target.setShuffle(true); e.target.playVideo(); }
-                    if (e.data === YT.PlayerState.ENDED && mode === 'INTER') switchToMusic(); 
-                },
-                'onError': () => setTimeout(() => switchToMusic(), 2000)
-            }});
+            playerMusic = new YT.Player('player-music', { 
+                height: '100%', width: '100%', 
+                playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, enablejsapi: 1, disablekb: 1 }, 
+                events: { 
+                    'onStateChange': (e) => { 
+                        if (e.data === 5) { // Cued / Ready
+                            e.target.setShuffle(true); 
+                            if(activeSystem === 'VIVA') e.target.playVideo();
+                        }
+                        if (e.data === YT.PlayerState.PLAYING) showVivaTag();
+                        if (e.data === YT.PlayerState.ENDED) { e.target.nextVideo(); }
+                    },
+                    'onError': () => { console.log("Video Fehler - springe weiter"); playerMusic.nextVideo(); }
+                }
+            });
         }
 
         function zapToMusic(firstLoad) {
-            mode = 'MUSIC';
             if (!playerMusic || !playerMusic.loadPlaylist) {
                 if (zapRetryCount < 10) { zapRetryCount++; setTimeout(() => zapToMusic(firstLoad), 500); }
                 return;
             }
             if (firstLoad) {
-                playerMusic.loadPlaylist({ list: musicPlaylistId, index: Math.floor(Math.random() * 300) });
-                playerMusic.playVideo(); 
-                setTimeout(() => { if(playerMusic.setShuffle) playerMusic.setShuffle(true); }, 1500);
+                // Echter Zufalls-Startpunkt
+                const startIndex = Math.floor(Math.random() * 200);
+                playerMusic.loadPlaylist({ list: musicPlaylistId, index: startIndex });
+                playerMusic.setShuffle(true);
+                playerMusic.playVideo();
             } else { playerMusic.nextVideo(); }
-        }
-
-        function switchToInter() {
-            if (mode === 'INTER' || !playerInter || !playerInter.loadPlaylist) return;
-            mode = 'INTER';
-            // 1. Inter-Container aktivieren
-            document.getElementById('container-inter').classList.add('active');
-            // 2. Playlist laden & Audio-Vorbereitung
-            playerInter.loadPlaylist({ list: interPlaylistId, index: Math.floor(Math.random() * 40) });
-            playerInter.unMute();
-            // 3. Zeitversetzter Startbefehl für Browser-Kompatibilität
-            setTimeout(() => { 
-                playerInter.playVideo();
-                playerMusic.mute();
-            }, 200);
-            // 4. Musik erst pausieren wenn Clip läuft
-            setTimeout(() => { if (mode === 'INTER') playerMusic.pauseVideo(); }, 1000);
-        }
-
-        function switchToMusic() {
-            if (mode === 'MUSIC') return;
-            mode = 'MUSIC';
-            songsPlayed = 0;
-            nextInterAfter = Math.floor(Math.random() * 2) + 2;
-            document.getElementById('container-inter').classList.remove('active');
-            playerInter.stopVideo();
-            playerMusic.unMute(); 
-            playerMusic.playVideo(); 
-            playerMusic.nextVideo();
         }
 
         function handleVivaUI() {
@@ -277,7 +235,7 @@
         function showVivaTag() {
             try {
                 const title = playerMusic.getVideoData().title;
-                if (!title || mode !== 'MUSIC') return;
+                if (!title) return;
                 document.getElementById('viva-title').innerText = title;
                 document.getElementById('viva-tag').classList.add('show');
                 setTimeout(() => document.getElementById('viva-tag').classList.remove('show'), 8000);
@@ -297,16 +255,13 @@
             const timeStr = now.toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
             if (activeSystem === 'VIVA') {
                 document.getElementById('viva-clock').innerText = timeStr;
-                let currentPlayer = (mode === 'MUSIC') ? playerMusic : playerInter;
-                if (currentPlayer && currentPlayer.getPlayerState) {
-                    const state = currentPlayer.getPlayerState();
-                    const currentTime = currentPlayer.getCurrentTime();
+                if (playerMusic && playerMusic.getPlayerState) {
+                    const state = playerMusic.getPlayerState();
+                    const currentTime = playerMusic.getCurrentTime();
+                    // Hang-Check: Wenn Video im Playing-State hängt oder im Buffer feststeckt
                     if (state === 3 || state === -1 || (state === 1 && currentTime === lastTime)) {
                         hangCounter++;
-                        if (hangCounter > 8) { 
-                            if (mode === 'MUSIC') playerMusic.nextVideo(); else switchToMusic();
-                            hangCounter = 0;
-                        }
+                        if (hangCounter > 8) { playerMusic.nextVideo(); hangCounter = 0; }
                     } else if (state === 1) {
                         hangCounter = 0; lastTime = currentTime;
                     }
@@ -319,5 +274,4 @@
         }, 1000);
     </script>
 </body>
-    </html>
-    
+</html>
