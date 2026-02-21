@@ -189,7 +189,6 @@
                 'onStateChange': (e) => { 
                     if (e.data === 5) { 
                         e.target.setShuffle(true); 
-                        // Falls Playlist geladen aber nicht gestartet: Force Play
                         if(activeSystem === 'VIVA' && mode === 'MUSIC') e.target.playVideo();
                     }
                     if (e.data === YT.PlayerState.PLAYING && mode === 'MUSIC') showVivaTag();
@@ -211,30 +210,32 @@
 
         function zapToMusic(firstLoad) {
             mode = 'MUSIC';
-            // Falls Player noch nicht bereit, retry
             if (!playerMusic || !playerMusic.loadPlaylist) {
-                if (zapRetryCount < 10) {
-                    zapRetryCount++;
-                    setTimeout(() => zapToMusic(firstLoad), 500);
-                }
+                if (zapRetryCount < 10) { zapRetryCount++; setTimeout(() => zapToMusic(firstLoad), 500); }
                 return;
             }
-
             if (firstLoad) {
                 playerMusic.loadPlaylist({ list: musicPlaylistId, index: Math.floor(Math.random() * 300) });
-                playerMusic.playVideo(); // Force start
+                playerMusic.playVideo(); 
                 setTimeout(() => { if(playerMusic.setShuffle) playerMusic.setShuffle(true); }, 1500);
             } else { playerMusic.nextVideo(); }
         }
 
         function switchToInter() {
-            if (mode === 'INTER' || !playerInter.loadPlaylist) return;
+            if (mode === 'INTER' || !playerInter || !playerInter.loadPlaylist) return;
             mode = 'INTER';
+            // 1. Inter-Container aktivieren
             document.getElementById('container-inter').classList.add('active');
+            // 2. Playlist laden & Audio-Vorbereitung
             playerInter.loadPlaylist({ list: interPlaylistId, index: Math.floor(Math.random() * 40) });
-            playerInter.unMute(); playerInter.playVideo(); 
-            playerMusic.mute();
-            setTimeout(() => { if (mode === 'INTER') playerMusic.pauseVideo(); }, 800);
+            playerInter.unMute();
+            // 3. Zeitversetzter Startbefehl für Browser-Kompatibilität
+            setTimeout(() => { 
+                playerInter.playVideo();
+                playerMusic.mute();
+            }, 200);
+            // 4. Musik erst pausieren wenn Clip läuft
+            setTimeout(() => { if (mode === 'INTER') playerMusic.pauseVideo(); }, 1000);
         }
 
         function switchToMusic() {
@@ -244,7 +245,9 @@
             nextInterAfter = Math.floor(Math.random() * 2) + 2;
             document.getElementById('container-inter').classList.remove('active');
             playerInter.stopVideo();
-            playerMusic.unMute(); playerMusic.playVideo(); playerMusic.nextVideo();
+            playerMusic.unMute(); 
+            playerMusic.playVideo(); 
+            playerMusic.nextVideo();
         }
 
         function handleVivaUI() {
@@ -300,7 +303,7 @@
                     const currentTime = currentPlayer.getCurrentTime();
                     if (state === 3 || state === -1 || (state === 1 && currentTime === lastTime)) {
                         hangCounter++;
-                        if (hangCounter > 5) { 
+                        if (hangCounter > 8) { 
                             if (mode === 'MUSIC') playerMusic.nextVideo(); else switchToMusic();
                             hangCounter = 0;
                         }
