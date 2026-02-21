@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIVA & MTV - Master Ultimate 2026 (Logic & Logo Update)</title>
+    <title>VIVA & MTV - Master Ultimate 2026 v6.2</title>
     <style>
         :root { 
             --viva-blue: #1a4a9e; --viva-yellow: #ffff00; --viva-pink: #ff00ff; 
@@ -11,17 +11,33 @@
         }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: black; font-family: 'Arial Black', sans-serif; -webkit-tap-highlight-color: transparent; }
 
-        /* --- PORTAL --- */
+        /* --- PORTAL / STARTSEITE --- */
         #portal-overlay {
             position: fixed; inset: 0; z-index: 20000;
             background: radial-gradient(circle, #222 0%, #000 100%);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s;
         }
-        .portal-grid { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; width: 90%; }
-        .retro-card { position: relative; width: 340px; height: 190px; background: #000; border: 4px solid #444; border-radius: 15px; overflow: hidden; cursor: pointer; transition: 0.4s; }
-        .retro-card:hover { transform: scale(1.05); border-color: #fff; }
-        .preview-content { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.5; }
-        .card-label { position: absolute; bottom: 15px; left: 15px; color: #fff; font-size: 18px; text-shadow: 2px 2px 4px #000; z-index: 2; }
+        .portal-grid { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; width: 90%; z-index: 2; }
+        
+        .retro-card { 
+            position: relative; width: 340px; height: 190px; 
+            background: #111; border: 4px solid #444; border-radius: 15px; 
+            overflow: hidden; cursor: pointer; transition: 0.4s; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .retro-card:hover { transform: scale(1.05); border-color: #fff; box-shadow: 0 0 25px rgba(255,255,255,0.2); }
+        .retro-card:active { transform: scale(0.98); }
+
+        .preview-content { 
+            position: absolute; inset: 0; background-size: cover; background-position: center; 
+            opacity: 0.5; transition: 0.5s; background-color: #222; /* Fallback Color */
+        }
+        .retro-card:hover .preview-content { opacity: 0.8; transform: scale(1.1); }
+        
+        .card-label { position: absolute; bottom: 15px; left: 15px; color: #fff; font-size: 18px; text-shadow: 2px 2px 4px #000; z-index: 2; letter-spacing: 1px; }
+        
+        .version-tag { position: absolute; bottom: 15px; right: 20px; color: rgba(255,255,255,0.3); font-family: sans-serif; font-size: 10px; pointer-events: none; }
 
         #menu-btn {
             position: absolute; top: 25px; right: 25px; z-index: 25000;
@@ -34,7 +50,6 @@
         .viva-click-shield { position: absolute; inset: 0; z-index: 50; background: transparent; }
         .viva-clock { position: absolute; top: 30px; left: 35px; z-index: 100; font-size: 28px; color: var(--viva-yellow); text-shadow: 3px 3px 0px var(--viva-blue); }
         
-        /* VIVA LOGO OVERLAY */
         .viva-logo-overlay { position: absolute; top: 30px; right: 30px; z-index: 100; transform: scale(0.6); transform-origin: right top; pointer-events: none; }
         .v-logo-row { display: flex; }
         .triangle-svg { width: 60px; height: 55px; margin-left: -30px; }
@@ -46,14 +61,15 @@
         #viva-tag { position: absolute; bottom: 25%; left: 0; z-index: 200; background: var(--viva-yellow); color: var(--viva-blue); padding: 15px 40px; border: 5px solid var(--viva-blue); box-shadow: 8px 8px 0px var(--viva-pink); transform: translateX(-110%); transition: 0.5s; pointer-events: none; }
         #viva-tag.show { transform: translateX(0); }
         
-        /* VIVA CONTROLS (Gedreht) */
+        /* VIVA CONTROLS (Final Drehung Korrektur) */
         .viva-controls { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 40px; opacity: 0; transition: 0.5s; pointer-events: none; }
         .viva-controls.show { opacity: 1; pointer-events: auto; }
-        .btn-v-tri-svg { width: 80px; height: 80px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; }
+        .btn-v-tri-svg { width: 90px; height: 90px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; }
         .btn-v-tri-svg svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-        .icon-label { position: relative; z-index: 10; font-weight: 900; font-size: 20px; }
-        .icon-up { color: white; margin-top: 15px; } /* Skip Icon im aufrechten Dreieck */
-        .icon-down { color: var(--viva-blue); margin-bottom: 15px; } /* FS Icon im umgedrehten Dreieck */
+        
+        .icon-label { position: relative; z-index: 10; font-weight: 900; font-size: 22px; pointer-events: none; }
+        .icon-up { color: white; margin-top: 18px; } /* Skip ▶▶ im aufrechten Dreieck */
+        .icon-down { color: var(--viva-blue); margin-bottom: 18px; } /* FS ⛶ im umgedrehten Dreieck */
 
         .player-container { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity 0.8s; }
         .active-player { opacity: 1; pointer-events: auto; }
@@ -65,8 +81,6 @@
         .mtv-container.active-mode iframe { transform: translateY(0%); }
         .mtv-glass { position: absolute; inset: 0; z-index: 20; cursor: pointer; }
         .mtv-container.active-mode .mtv-glass { bottom: 120px; } 
-        .mtv-top-info { position: absolute; top: 60px; left: 30px; z-index: 30; display: flex; align-items: center; pointer-events: none; transition: opacity 0.5s; }
-        .mtv-container.active-mode .mtv-top-info { opacity: 0; }
         .mtv-day-label { background: var(--mtv-amber); color: #000; padding: 8px 18px; font-size: 20px; font-weight: 900; margin-right: 12px; }
         .mtv-controls { position: absolute; bottom: 160px; left: 50%; transform: translateX(-50%); z-index: 1000; opacity: 0; transition: 0.5s; display: flex; justify-content: center; pointer-events: none; }
         .mtv-container.active-mode .mtv-controls { opacity: 1; pointer-events: auto; }
@@ -78,17 +92,18 @@
     <button id="menu-btn" onclick="showPortal()">KANAL WECHSELN</button>
 
     <div id="portal-overlay">
-        <h2 style="color:white; margin-bottom:40px; letter-spacing:5px;">CHANNEL SELECTION</h2>
+        <h2 style="color:white; margin-bottom:40px; letter-spacing:5px; text-shadow: 0 0 10px rgba(255,255,255,0.5);">CHANNEL SELECTION</h2>
         <div class="portal-grid">
             <div class="retro-card" onclick="launchViva()">
-                <div class="preview-content" style="background-image:url('https://images.unsplash.com/photo-1543900694-133f37abaaa5?w=1200')"></div>
+                <div id="bg-viva" class="preview-content"></div>
                 <div class="card-label">VIVA REWIND</div>
             </div>
             <div class="retro-card" onclick="launchMtv()">
-                <div class="preview-content" style="background-image:url('https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=1200')"></div>
+                <div id="bg-mtv" class="preview-content"></div>
                 <div class="card-label">MTV REWIND</div>
             </div>
         </div>
+        <div class="version-tag">Build 2026.02.v62</div>
     </div>
 
     <div id="viva-view">
@@ -126,7 +141,7 @@
         <div id="mtvMainContainer" class="mtv-container">
             <div class="mtv-glass" onclick="toggleMtvInterface()"></div>
             <iframe id="mtvFrame" src="" allow="autoplay; fullscreen"></iframe>
-            <div class="mtv-top-info">
+            <div class="mtv-top-info" style="position: absolute; top: 60px; left: 30px; z-index: 30; display: flex; align-items: center; pointer-events: none; transition: opacity 0.5s;">
                 <div id="mtv-weekday" class="mtv-day-label">--</div>
                 <div style="color:white; text-shadow: 2px 2px 4px #000;">
                     <div id="mtv-clock" style="font-size: 24px;">00:00</div>
@@ -144,8 +159,25 @@
         let pMusic, pInter, uiTimer, mtvTimeout, activeSystem = null;
         let currentMode = 'MUSIC', fadeTriggered = false;
         let songsPlayed = 0, songsUntilNextClip = 2, clipsInThisSession = 0, currentClipId = "";
-        let maxClipsAllowed = 1; // Standard: 1 Clip
-        let lastTime = -1, hangCounter = 0;
+        let maxClipsAllowed = 1, lastTime = -1, hangCounter = 0;
+
+        // DYNAMISCHE HINTERGRÜNDE FÜR STARTSEITE
+        function initPortalBgs() {
+            const vivaPool = [
+                'https://images.unsplash.com/photo-1543900694-133f37abaaa5?w=800',
+                'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=800',
+                'https://images.unsplash.com/photo-1514525253344-f20300977d12?w=800'
+            ];
+            const mtvPool = [
+                'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800',
+                'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800',
+                'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=800'
+            ];
+            const day = new Date().getDate();
+            document.getElementById('bg-viva').style.backgroundImage = `url('${vivaPool[day % vivaPool.length]}')`;
+            document.getElementById('bg-mtv').style.backgroundImage = `url('${mtvPool[day % mtvPool.length]}')`;
+        }
+        initPortalBgs();
 
         function onYouTubeIframeAPIReady() {
             const pVars = { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, enablejsapi: 1, iv_load_policy: 3 };
@@ -163,7 +195,6 @@
                     if (newId !== currentClipId) {
                         currentClipId = newId;
                         clipsInThisSession++;
-                        // ÜBERRASCHUNGS-LOGIK: Wenn clipsInThisSession > maxClipsAllowed, dann zurück
                         if (clipsInThisSession > maxClipsAllowed) switchToMusic();
                     }
                 }
@@ -176,10 +207,7 @@
 
         function switchToClip() {
             currentMode = 'CLIP'; fadeTriggered = true; clipsInThisSession = 0; currentClipId = "";
-            
-            // ÜBERRASCHUNG: Zu 15% Wahrscheinlichkeit dürfen 2 Clips kommen
             maxClipsAllowed = (Math.random() < 0.15) ? 2 : 1;
-
             pInter.setVolume(0);
             pInter.loadPlaylist({ list: 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl', index: Math.floor(Math.random() * 45) });
             switchVisuals('CLIP', '6s');
@@ -206,14 +234,12 @@
             else { dI.classList.add('active-player'); dM.classList.remove('active-player'); }
         }
 
-        function extractId(url) { const match = url.match(/[?&]v=([^&]+)/); return match ? match[1] : ""; }
-
         function launchViva() { activeSystem = 'VIVA'; document.getElementById('portal-overlay').style.display = 'none'; document.getElementById('viva-view').style.display = 'block'; zapToMusic(true); }
         function launchMtv() { activeSystem = 'MTV'; document.getElementById('portal-overlay').style.display = 'none'; document.getElementById('mtv-view').style.display = 'block'; document.getElementById('mtvFrame').src = "https://wantmymtv.xyz/embed.html?channel=mtv_80s&autoplay=1"; }
         function showPortal() { activeSystem = null; document.getElementById('portal-overlay').style.display = 'flex'; document.getElementById('viva-view').style.display = 'none'; document.getElementById('mtv-view').style.display = 'none'; document.getElementById('mtvFrame').src = ""; pMusic.stopVideo(); pInter.stopVideo(); }
 
         function zapToMusic(first) {
-            currentMode = 'MUSIC'; songsPlayed = 0; songsUntilNextClip = Math.floor(Math.random() * 2) + 2;
+            currentMode = 'MUSIC'; songsPlayed = 0;
             if (first) { pMusic.loadPlaylist({ list: 'PLfYJatUfKgnlRa5IM0KI_ll0UyhYItnU2', index: Math.floor(Math.random() * 200) }); setTimeout(() => pMusic.setShuffle(true), 2000); switchVisuals('MUSIC', '0s'); }
             else pMusic.nextVideo();
         }
@@ -226,21 +252,25 @@
             } else { c.classList.remove('active-mode'); menu.style.opacity = 0; clearTimeout(mtvTimeout); }
         }
 
-        function handleVivaUI() { document.getElementById('viva-ui').classList.add('show'); document.getElementById('menu-btn').style.opacity = 1; clearTimeout(uiTimer); uiTimer = setTimeout(() => { document.getElementById('viva-ui').classList.remove('show'); document.getElementById('menu-btn').style.opacity = 0; }, 5000); }
+        function handleVivaUI() { document.getElementById('viva-ui').classList.add('show'); document.getElementById('menu-btn').style.opacity = 1; clearTimeout(uiTimer); uiTimer = setTimeout(() => { hideVivaUI(); }, 5000); }
         function hideVivaUI() { document.getElementById('viva-ui').classList.remove('show'); document.getElementById('menu-btn').style.opacity = 0; }
 
         function showVivaTag() {
-            const title = pMusic.getVideoData().title;
-            if (!title || currentMode !== 'MUSIC') return;
-            document.getElementById('viva-title').innerText = title;
-            document.getElementById('viva-tag').classList.add('show');
-            setTimeout(() => document.getElementById('viva-tag').classList.remove('show'), 8000);
+            try {
+                const title = pMusic.getVideoData().title;
+                if (!title || currentMode !== 'MUSIC') return;
+                document.getElementById('viva-title').innerText = title;
+                document.getElementById('viva-tag').classList.add('show');
+                setTimeout(() => document.getElementById('viva-tag').classList.remove('show'), 8000);
+            } catch(e){}
         }
 
         function toggleFS() { 
-            if (!document.fullscreenElement) { document.documentElement.requestFullscreen().then(() => { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); }); } 
+            if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } 
             else { document.exitFullscreen(); }
         }
+
+        function extractId(url) { const match = url.match(/[?&]v=([^&]+)/); return match ? match[1] : ""; }
 
         setInterval(() => {
             const now = new Date();
@@ -262,5 +292,4 @@
         }, 500);
     </script>
 </body>
-                </html>
-                
+</html>
