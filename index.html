@@ -186,6 +186,7 @@
             const pVars = { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, enablejsapi: 1, disablekb: 1 };
             playerMusic = new YT.Player('player-music', { height: '100%', width: '100%', playerVars: pVars, events: { 
                 'onStateChange': (e) => { 
+                    if (e.data === 5) { e.target.setShuffle(true); }
                     if (e.data === YT.PlayerState.PLAYING && mode === 'MUSIC') showVivaTag();
                     if (e.data === YT.PlayerState.ENDED && mode === 'MUSIC') {
                          songsPlayed++;
@@ -196,6 +197,7 @@
             }});
             playerInter = new YT.Player('player-inter', { height: '100%', width: '100%', playerVars: pVars, events: {
                 'onStateChange': (e) => { 
+                    if (e.data === 5) { e.target.setShuffle(true); }
                     if (e.data === YT.PlayerState.ENDED && mode === 'INTER') switchToMusic(); 
                 },
                 'onError': () => setTimeout(() => switchToMusic(), 2000)
@@ -205,11 +207,7 @@
         function zapToMusic(firstLoad) {
             mode = 'MUSIC';
             if (firstLoad) {
-                playerMusic.loadPlaylist({ 
-                    list: musicPlaylistId, 
-                    index: Math.floor(Math.random() * 250) 
-                });
-                // Shuffle nur triggern, wenn der Player bereit ist
+                playerMusic.loadPlaylist({ list: musicPlaylistId, index: Math.floor(Math.random() * 250) });
                 setTimeout(() => { if(playerMusic.setShuffle) playerMusic.setShuffle(true); }, 2000);
             } else {
                 playerMusic.nextVideo();
@@ -219,15 +217,14 @@
         function switchToInter() {
             if (mode === 'INTER') return;
             mode = 'INTER';
-            // Erst den neuen Player laden, dann den alten pausieren (stabiler)
-            playerInter.loadPlaylist({ 
-                list: interPlaylistId, 
-                index: Math.floor(Math.random() * 40) 
-            });
-            playerMusic.mute();
+            // Aggressiver Wechsel: Sofort Container zeigen
             document.getElementById('container-inter').classList.add('active');
-            // Kurz warten, bis der Inter-Player gestartet ist, dann Music-Player stoppen
-            setTimeout(() => { if (mode === 'INTER') playerMusic.pauseVideo(); }, 1000);
+            // Player laden und explizit abspielen forcen
+            playerInter.loadPlaylist({ list: interPlaylistId, index: Math.floor(Math.random() * 40) });
+            playerInter.unMute();
+            playerInter.playVideo(); 
+            playerMusic.mute();
+            setTimeout(() => { if (mode === 'INTER') playerMusic.pauseVideo(); }, 800);
         }
 
         function switchToMusic() {
@@ -296,10 +293,10 @@
                     const state = currentPlayer.getPlayerState();
                     const currentTime = currentPlayer.getCurrentTime();
 
-                    // Hang-Detection (5 Sek)
                     if (state === 3 || state === -1 || (state === 1 && currentTime === lastTime)) {
                         hangCounter++;
                         if (hangCounter > 5) { 
+                            console.log("Hänger erkannt, überspringe...");
                             if (mode === 'MUSIC') playerMusic.nextVideo(); else switchToMusic();
                             hangCounter = 0;
                         }
@@ -321,5 +318,5 @@
         }, 1000);
     </script>
 </body>
-    </html>
-    
+                                                                         </html>
+                                                                         
