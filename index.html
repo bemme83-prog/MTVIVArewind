@@ -102,7 +102,7 @@
                 <div class="card-label">MTV REWIND</div>
             </div>
         </div>
-        <div class="version-tag">v3.8-stable-2026</div>
+        <div class="version-tag">v3.9-hybrid-2026</div>
     </div>
 
     <div id="viva-view">
@@ -110,7 +110,7 @@
         
         <div class="viva-clock-container">
             <div id="viva-clock" class="viva-clock">00:00</div>
-            <div class="viva-refresh-btn" onclick="zapToMusic(false)" title="Stream Refresh">↺</div>
+            <div class="viva-refresh-btn" onclick="zapToMusic(true)" title="Stream Refresh">↺</div>
         </div>
 
         <div class="viva-header">
@@ -157,7 +157,13 @@
     <script>
         let playerMusic, uiTimer, mtvTimeout, activeSystem = null;
         let lastTime = -1, hangCounter = 0, zapRetryCount = 0;
+        
+        let mode = 'MUSIC'; // 'MUSIC' oder 'INTER'
+        let songsPlayed = 0;
+        let nextInterAfter = Math.floor(Math.random() * 2) + 2; // Alle 2 bis 3 Songs
+
         const musicPlaylistId = 'PLfYJatUfKgnlRa5IM0KI_ll0UyhYItnU2';
+        const interPlaylistId = 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl';
 
         function initPortalBgs() {
             const vivaBgs = ['https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=800','https://images.unsplash.com/photo-1514525253344-f20300977d12?w=800','https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800'];
@@ -198,32 +204,65 @@
                 playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, enablejsapi: 1, disablekb: 1 }, 
                 events: { 
                     'onStateChange': (e) => { 
-                        if (e.data === 5) { 
+                        if (e.data === 5) { // Cued
                             e.target.setShuffle(true); 
                             if(activeSystem === 'VIVA') e.target.playVideo();
                         }
                         if (e.data === YT.PlayerState.PLAYING) {
-                            showVivaTag();
-                            hangCounter = 0; // Reset bei Erfolg
+                            if(mode === 'MUSIC') showVivaTag();
+                            hangCounter = 0;
                         }
-                        if (e.data === YT.PlayerState.ENDED) { e.target.nextVideo(); }
+                        if (e.data === YT.PlayerState.ENDED) { 
+                            handleVideoEnd();
+                        }
                     },
                     'onError': () => { playerMusic.nextVideo(); }
                 }
             });
         }
 
-        function zapToMusic(firstLoad) {
+        function handleVideoEnd() {
+            if (mode === 'MUSIC') {
+                songsPlayed++;
+                if (songsPlayed >= nextInterAfter) {
+                    switchToInter();
+                } else {
+                    playerMusic.nextVideo();
+                }
+            } else {
+                switchToMusic();
+            }
+        }
+
+        function switchToInter() {
+            mode = 'INTER';
+            const startIndex = Math.floor(Math.random() * 40);
+            playerMusic.loadPlaylist({ list: interPlaylistId, index: startIndex });
+        }
+
+        function switchToMusic() {
+            mode = 'MUSIC';
+            songsPlayed = 0;
+            nextInterAfter = Math.floor(Math.random() * 2) + 2;
+            const startIndex = Math.floor(Math.random() * 250);
+            playerMusic.loadPlaylist({ list: musicPlaylistId, index: startIndex });
+        }
+
+        function zapToMusic(forceNewStart) {
             if (!playerMusic || !playerMusic.loadPlaylist) {
-                if (zapRetryCount < 10) { zapRetryCount++; setTimeout(() => zapToMusic(firstLoad), 500); }
+                if (zapRetryCount < 10) { zapRetryCount++; setTimeout(() => zapToMusic(forceNewStart), 500); }
                 return;
             }
-            if (firstLoad) {
-                const startIndex = Math.floor(Math.random() * 200);
+            if (forceNewStart) {
+                mode = 'MUSIC';
+                songsPlayed = 0;
+                const startIndex = Math.floor(Math.random() * 250);
                 playerMusic.loadPlaylist({ list: musicPlaylistId, index: startIndex });
                 playerMusic.setShuffle(true);
                 playerMusic.playVideo();
-            } else { playerMusic.nextVideo(); }
+            } else { 
+                playerMusic.nextVideo(); 
+            }
         }
 
         function handleVivaUI() {
@@ -253,7 +292,7 @@
         function showVivaTag() {
             try {
                 const title = playerMusic.getVideoData().title;
-                if (!title) return;
+                if (!title || mode !== 'MUSIC') return;
                 document.getElementById('viva-title').innerText = title;
                 document.getElementById('viva-tag').classList.add('show');
                 setTimeout(() => document.getElementById('viva-tag').classList.remove('show'), 8000);
@@ -277,8 +316,6 @@
                     const state = playerMusic.getPlayerState();
                     const currentTime = playerMusic.getCurrentTime();
                     
-                    // Scharfer Hang-Check (4 Sekunden)
-                    // -1: Nicht gestartet, 3: Buffering, oder Zeit steht still im Play-Modus
                     if (state === 3 || state === -1 || (state === 1 && currentTime === lastTime)) {
                         hangCounter++;
                         if (hangCounter > 4) { 
@@ -297,4 +334,5 @@
         }, 1000);
     </script>
 </body>
-</html>
+                    </html>
+                    
