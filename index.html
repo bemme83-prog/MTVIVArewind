@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIVA Dual-Crossfade v4.2 (6s Edition)</title>
+    <title>VIVA Test: Musik-Clip-Musik</title>
     <style>
         :root { --viva-blue: #1a4a9e; --viva-yellow: #ffff00; }
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: black; font-family: 'Arial Black', sans-serif; }
-        
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #000; font-family: 'Arial Black', sans-serif; }
         #portal-overlay { position: fixed; inset: 0; z-index: 20000; background: #000; display: flex; justify-content: center; align-items: center; }
         .start-btn { padding: 20px 40px; background: var(--viva-yellow); color: var(--viva-blue); border: none; font-size: 24px; cursor: pointer; border-radius: 10px; font-weight: bold; }
-        
-        /* Visueller Crossfade auf 6 Sekunden angepasst */
-        .player-container { position: absolute; inset: 0; transition: opacity 6s ease-in-out; opacity: 0; pointer-events: none; background: #000; }
+        .player-container { position: absolute; inset: 0; transition: opacity 1s ease-in-out; opacity: 0; pointer-events: none; background: #000; }
+        /* Der 6s Fade gilt nur für Musik -> Clip */
+        .fade-6s { transition: opacity 6s ease-in-out !important; }
         .active-player { opacity: 1; pointer-events: auto; }
-        
         .viva-clock { position: absolute; top: 30px; left: 35px; z-index: 500; font-size: 28px; color: var(--viva-yellow); text-shadow: 3px 3px 0px var(--viva-blue); }
         #debug { position: absolute; top: 75px; left: 35px; z-index: 500; color: #00ff00; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.7); padding: 8px; border-radius: 5px; }
     </style>
@@ -22,13 +20,12 @@
 <body>
 
     <div id="portal-overlay">
-        <button class="start-btn" onclick="startTest()">START 6s CROSSFADE TEST</button>
+        <button class="start-btn" onclick="startTest()">TEST: Musik -> Clip -> Musik</button>
     </div>
 
     <div id="viva-view">
         <div id="viva-clock" class="viva-clock">00:00</div>
-        <div id="debug">System bereit...</div>
-        
+        <div id="debug">Bereit...</div>
         <div id="div-music" class="player-container"><div id="player-music"></div></div>
         <div id="div-inter" class="player-container"><div id="player-inter"></div></div>
     </div>
@@ -36,7 +33,7 @@
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         let pMusic, pInter;
-        let testStep = 0; 
+        let testStep = 0; // 0: Musik1, 1: Clip, 2: Musik2, 3: Ende
         let preloadTriggered = false;
         let fadeTriggered = false;
 
@@ -59,54 +56,83 @@
         function startTest() {
             document.getElementById('portal-overlay').style.display = 'none';
             testStep = 0; preloadTriggered = false; fadeTriggered = false;
-            switchVisuals('music');
+            switchVisuals('music', false);
             pMusic.loadPlaylist({ list: musicPL, index: Math.floor(Math.random() * 50) });
             pMusic.setVolume(100);
-            updateDebug("Musik läuft...");
+            updateDebug("Musik 1 läuft...");
         }
 
         function handleState(e, type) {
-            if (e.data === YT.PlayerState.ENDED) {
-                if (type === 'inter') {
-                    if (testStep === 1) {
-                        testStep = 2;
-                        updateDebug("Clip 1 Ende -> Clip 2 direkt");
-                        pInter.nextVideo();
-                    } else if (testStep === 2) {
-                        updateDebug("Test beendet.");
-                        pInter.stopVideo(); pMusic.stopVideo();
-                    }
-                }
+            // Wenn der Clip (Step 1) endet -> Zurück zur Musik
+            if (type === 'inter' && e.data === YT.PlayerState.ENDED && testStep === 1) {
+                switchToMusicNext();
+            }
+            // Wenn die zweite Musik (Step 2) endet -> STOP
+            if (type === 'music' && e.data === YT.PlayerState.ENDED && testStep === 2) {
+                updateDebug("TEST BEENDET.");
+                pMusic.stopVideo();
             }
         }
 
-        function switchVisuals(target) {
-            document.getElementById('div-music').className = 'player-container' + (target === 'music' ? ' active-player' : '');
-            document.getElementById('div-inter').className = 'player-container' + (target === 'inter' ? ' active-player' : '');
+        function switchToMusicNext() {
+            testStep = 2;
+            updateDebug("Clip Ende -> Musik 2 startet (Hard Cut)");
+            
+            // Clip-Player aufräumen
+            pInter.pauseVideo();
+            
+            // Visueller Wechsel (Schnell: 1s Fade oder Hard Cut)
+            switchVisuals('music', false); 
+            
+            // Musik 2 starten (wurde idealerweise schon im Hintergrund gecued)
+            pMusic.setVolume(100);
+            pMusic.nextVideo();
+            pMusic.playVideo();
+        }
+
+        function switchVisuals(target, useLongFade) {
+            const dM = document.getElementById('div-music');
+            const dI = document.getElementById('div-inter');
+            
+            if (useLongFade) {
+                dM.classList.add('fade-6s');
+                dI.classList.add('fade-6s');
+            } else {
+                dM.classList.remove('fade-6s');
+                dI.classList.remove('fade-6s');
+            }
+
+            if (target === 'music') {
+                dM.classList.add('active-player');
+                dI.classList.remove('active-player');
+            } else {
+                dI.classList.add('active-player');
+                dM.classList.remove('active-player');
+            }
         }
 
         function updateDebug(msg) {
-            document.getElementById('debug').innerText = "STEP " + testStep + ": " + msg;
+            document.getElementById('debug').innerText = msg;
         }
 
         setInterval(() => {
             document.getElementById('viva-clock').innerText = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
             
+            // Logik NUR während Musik 1 läuft
             if (testStep === 0 && pMusic && pMusic.getPlayerState() === 1) {
                 let timeLeft = pMusic.getDuration() - pMusic.getCurrentTime();
                 
-                // PRELOAD bei 20s
                 if (timeLeft <= 20 && !preloadTriggered) {
                     preloadTriggered = true;
-                    pInter.cuePlaylist({ list: interPL, index: 0 });
-                    updateDebug("Preload aktiv...");
+                    pInter.loadVideoById({'videoId': 'S1vH0f-X5X0'}); // Beispiel Clip ID oder pInter.cuePlaylist
+                    pInter.pauseVideo();
+                    updateDebug("Preload Clip (20s)");
                 }
 
-                // 6s CROSSFADE
                 if (timeLeft <= 6 && !fadeTriggered) {
                     fadeTriggered = true;
                     testStep = 1;
-                    switchVisuals('inter');
+                    switchVisuals('inter', true); // 6s Crossfade zu Clip
                     pInter.playVideo();
                     pInter.setVolume(0);
                     
@@ -114,16 +140,15 @@
                     let audioInterval = setInterval(() => {
                         vol -= 5;
                         if (vol <= 0) {
-                            pMusic.pauseVideo();
+                            pMusic.setVolume(0); // Musik lautlos im Hintergrund
                             pInter.setVolume(100);
                             clearInterval(audioInterval);
                         } else {
                             pMusic.setVolume(vol);
                             pInter.setVolume(100 - vol);
                         }
-                    }, 300); // 300ms * 20 Schritte = 6000ms (6s)
-                    
-                    updateDebug("Crossfade (6s) läuft...");
+                    }, 300);
+                    updateDebug("Crossfade zu Clip...");
                 }
             }
         }, 1000);
