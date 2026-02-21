@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIVA & MTV - Master Ultimate 2026 (MTV Final Fix)</title>
+    <title>VIVA & MTV - Master Ultimate 2026 (Restored & Fixed)</title>
     <style>
         :root { 
             --viva-blue: #1a4a9e; --viva-yellow: #ffff00; --viva-pink: #ff00ff; 
@@ -33,30 +33,32 @@
             padding: 12px 20px; font-size: 14px; cursor: pointer; opacity: 0; transition: 0.4s; border-radius: 8px;
         }
 
-        /* --- MTV VIEW (DIE KORREKTUR) --- */
+        /* --- MTV VIEW (MASTER FIX) --- */
         #mtv-view { position: absolute; inset: 0; display: none; background: #000; }
         .mtv-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
-        .mtv-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; transform: translateY(10%); transition: transform 0.5s ease; pointer-events: none; }
+        
+        /* Video schiebt sich 15% hoch */
+        .mtv-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; transform: translateY(15%); transition: transform 0.4s ease; pointer-events: none; }
         .mtv-container.active-mode iframe { transform: translateY(0%); }
 
-        /* WICHTIG: Glas wird bei active-mode klick-durchlässig */
-        .mtv-glass { position: absolute; inset: 0; z-index: 20; cursor: pointer; background: transparent; }
-        .mtv-container.active-mode .mtv-glass { pointer-events: none; } 
+        /* DAS GLAS: Deckt alles ab, aber schiebt sich bei Klick HOCH, um Buttons frei zu geben */
+        .mtv-glass { position: absolute; inset: 0; z-index: 20; cursor: pointer; background: rgba(0,0,0,0.01); transition: bottom 0.4s ease; }
+        .mtv-container.active-mode .mtv-glass { bottom: 150px; } /* Macht den Bereich unten klickbar! */
 
-        .mtv-top-info { position: absolute; top: 60px; left: 30px; z-index: 30; display: flex; align-items: center; pointer-events: none; transition: opacity 0.5s; }
+        .mtv-top-info { position: absolute; top: 60px; left: 30px; z-index: 30; display: flex; align-items: center; pointer-events: none; transition: opacity 0.4s; }
         .mtv-container.active-mode .mtv-top-info { opacity: 0; }
-        .mtv-day-label { background: var(--mtv-amber); color: #000; padding: 8px 18px; font-size: 2.2vw; font-weight: 900; margin-right: 12px; }
+        .mtv-day-label { background: var(--mtv-amber); color: #000; padding: 8px 18px; font-size: 20px; font-weight: 900; margin-right: 12px; }
 
         .mtv-controls { 
-            position: absolute; bottom: 90px; /* Ein Stück höher wie gewünscht */
-            left: 50%; transform: translateX(-50%); 
-            z-index: 1000; opacity: 0; transition: 0.5s; display: flex; gap: 15px; pointer-events: none; 
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 150px;
+            z-index: 10; opacity: 0; transition: 0.4s; display: flex; justify-content: center; align-items: center; pointer-events: none; 
         }
         .mtv-container.active-mode .mtv-controls { opacity: 1; pointer-events: auto; }
+        
         .btn-mtv { 
-            background: var(--mtv-amber); color: #000; border: none; padding: 18px 40px; 
-            font-size: 18px; cursor: pointer; font-weight: 900; box-shadow: 6px 6px 0px #000; 
-            text-transform: uppercase;
+            background: var(--mtv-amber); color: #000; border: none; padding: 15px 40px; 
+            font-size: 18px; cursor: pointer; font-weight: 900; box-shadow: 4px 4px 0px #000;
+            text-transform: uppercase; margin-bottom: 20px;
         }
 
         /* --- VIVA VIEW --- */
@@ -126,7 +128,7 @@
                 </div>
             </div>
             <div class="mtv-controls">
-                <button class="btn-mtv" onclick="toggleFS()">FULLSCREEN</button>
+                <button class="btn-mtv" onclick="toggleFS()">FULLSCREEN ⛶</button>
             </div>
         </div>
     </div>
@@ -171,32 +173,23 @@
         function launchMtv() { activeSystem = 'MTV'; document.getElementById('portal-overlay').style.display = 'none'; document.getElementById('mtv-view').style.display = 'block'; document.getElementById('mtvFrame').src = "https://wantmymtv.xyz/embed.html?channel=mtv_80s&autoplay=1"; }
         
         function showPortal() { 
-            activeSystem = null; 
-            document.getElementById('portal-overlay').style.display = 'flex'; 
-            document.getElementById('viva-view').style.display = 'none'; 
-            document.getElementById('mtv-view').style.display = 'none'; 
-            document.getElementById('mtvFrame').src = ""; 
-            pMusic.stopVideo(); pInter.stopVideo(); 
+            activeSystem = null; document.getElementById('portal-overlay').style.display = 'flex'; 
+            document.getElementById('viva-view').style.display = 'none'; document.getElementById('mtv-view').style.display = 'none'; 
+            document.getElementById('mtvFrame').src = ""; pMusic.stopVideo(); pInter.stopVideo(); 
         }
 
         function toggleMtvInterface() {
             const c = document.getElementById('mtvMainContainer');
             const menu = document.getElementById('menu-btn');
-            c.classList.add('active-mode'); 
-            menu.style.opacity = 1;
-            
+            c.classList.add('active-mode'); menu.style.opacity = 1;
             clearTimeout(mtvTimeout);
-            mtvTimeout = setTimeout(() => {
-                c.classList.remove('active-mode');
-                menu.style.opacity = 0;
-            }, 8000);
+            mtvTimeout = setTimeout(() => { c.classList.remove('active-mode'); menu.style.opacity = 0; }, 8000);
         }
 
         function triggerClip() {
             currentMode = 'CLIP'; fadeTriggered = true; clipsInThisSession = 0; currentClipId = "";
             pInter.loadPlaylist({ list: 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl', index: Math.floor(Math.random() * 45) });
             document.getElementById('layer-music').classList.add('fade-6s');
-            document.getElementById('layer-inter').classList.add('fade-6s');
             document.getElementById('layer-inter').classList.add('active');
             setTimeout(() => { pMusic.pauseVideo(); pInter.setVolume(100); }, 4000);
         }
@@ -217,11 +210,9 @@
             if (!document.fullscreenElement) {
                 await document.documentElement.requestFullscreen();
                 if (screen.orientation && screen.orientation.lock) {
-                    await screen.orientation.lock('landscape').catch(e => console.log("Orientation lock only on mobile"));
+                    await screen.orientation.lock('landscape').catch(e => {});
                 }
-            } else {
-                document.exitFullscreen();
-            }
+            } else { document.exitFullscreen(); }
         }
 
         setInterval(() => {
@@ -230,7 +221,6 @@
             document.getElementById('mtv-clock').innerText = now.toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
             document.getElementById('mtv-date').innerText = now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: '2-digit'});
             document.getElementById('mtv-weekday').innerText = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"][now.getDay()];
-            
             if (activeSystem === 'VIVA' && currentMode === 'MUSIC' && pMusic.getPlayerState() === 1) {
                 if (pMusic.getDuration() - pMusic.getCurrentTime() <= 6 && songsPlayed >= songsUntilNextClip) triggerClip();
             }
