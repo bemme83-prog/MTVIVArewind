@@ -11,7 +11,7 @@
         }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: black; font-family: 'Arial Black', sans-serif; -webkit-tap-highlight-color: transparent; }
 
-        /* --- PORTAL (Interaktive Schaltflächen) --- */
+        /* --- PORTAL --- */
         #portal-overlay {
             position: fixed; inset: 0; z-index: 20000;
             background: radial-gradient(circle, #222 0%, #000 100%);
@@ -27,14 +27,13 @@
         }
         .retro-card:hover { transform: scale(1.08); border-color: #fff; box-shadow: 0 0 30px rgba(255,255,255,0.2); }
         .retro-card:active { transform: scale(0.95); }
-        
         .preview-content { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.6; transition: 0.3s; background-color: #222; }
         .card-label { position: absolute; bottom: 20px; left: 20px; color: #fff; font-size: 22px; text-shadow: 2px 2px 4px #000; z-index: 2; letter-spacing: 2px; }
 
         #menu-btn {
             position: absolute; top: 25px; right: 25px; z-index: 25000;
             background: rgba(0,0,0,0.8); border: 2px solid #fff; color: #fff;
-            padding: 12px 20 rotates; font-size: 14px; cursor: pointer; opacity: 0; transition: 0.4s; border-radius: 8px;
+            padding: 12px 20px; font-size: 14px; cursor: pointer; opacity: 0; transition: 0.4s; border-radius: 8px;
         }
 
         /* --- VIVA VIEW --- */
@@ -43,25 +42,36 @@
         .viva-clock { position: absolute; top: 30px; left: 35px; z-index: 100; font-size: 28px; color: var(--viva-yellow); text-shadow: 3px 3px 0px var(--viva-blue); }
         .viva-header { position: absolute; top: 30px; right: 30px; z-index: 100; transform: scale(0.65); transform-origin: right top; }
         .rewind-text { font-style: italic; font-size: 26px; color: var(--viva-yellow); margin-top: -8px; text-shadow: 2px 2px 0px var(--viva-blue); text-align: center; width: 100%; }
+        
         #viva-tag { position: absolute; bottom: 25%; left: 0; z-index: 200; background: var(--viva-yellow); color: var(--viva-blue); padding: 15px 40px; border: 5px solid var(--viva-blue); box-shadow: 8px 8px 0px var(--viva-pink); transform: translateX(-110%); transition: 0.5s; pointer-events: none; }
         #viva-tag.show { transform: translateX(0); }
         
         .viva-controls { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 40px; opacity: 0; transition: 0.5s; pointer-events: none; }
         .viva-controls.show { opacity: 1; pointer-events: auto; }
         
-        /* DREIECKE UM 180 GRAD GEDREHT */
-        .btn-v-tri-svg { width: 80px; height: 80px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .btn-v-tri-svg svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+        /* DREIECKE LOGIK */
+        .btn-v-tri-svg { width: 90px; height: 90px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-v-tri-svg svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(180deg); }
         
-        /* Skip-Button (vorher Spitze oben, jetzt unten) */
-        .btn-skip { transform: rotate(180deg); }
-        /* FS-Button (vorher Spitze unten, jetzt oben) */
-        .btn-fs { transform: rotate(180deg); }
+        .btn-icon-v { 
+            position: relative; z-index: 10; 
+            font-weight: 900; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+        }
 
-        .btn-icon-v { position: relative; z-index: 10; color: var(--viva-blue); font-size: 22px; font-weight: 900; pointer-events: none; }
-        /* Icons gegenläufig drehen, damit Text gerade bleibt */
-        .icon-up { transform: rotate(180deg); margin-bottom: 15px; color: white !important; }
-        .icon-down { transform: rotate(180deg); margin-top: 15px; }
+        /* Skip Button Korrekturen */
+        .icon-skip { 
+            font-size: 26px; 
+            color: white; 
+            margin-top: 18px; /* Zentrierung im umgedrehten Dreieck */
+        }
+        
+        /* Fullscreen Button Korrekturen */
+        .icon-fs { 
+            font-size: 30px; 
+            color: var(--viva-blue); 
+            margin-bottom: 18px; /* Zentrierung im umgedrehten Dreieck */
+        }
 
         /* --- MTV VIEW --- */
         #mtv-view { position: absolute; inset: 0; display: none; background: #000; }
@@ -121,13 +131,13 @@
         <div id="viva-tag"><div id="viva-title">VIVA REWIND</div></div>
         
         <div class="viva-controls" id="viva-ui">
-            <div class="btn-v-tri-svg btn-skip" onclick="zapToMusic(false); hideVivaUI()">
+            <div class="btn-v-tri-svg" onclick="zapToMusic(false); hideVivaUI()">
                 <svg viewBox="0 0 100 100"><path d="M50 10 L92 90 L8 90 Z" fill="transparent" stroke="#1a4a9e" stroke-width="6" stroke-linejoin="round"/></svg>
-                <div class="btn-icon-v icon-up">▶▶</div>
+                <div class="btn-icon-v icon-skip">▶▶</div>
             </div>
-            <div class="btn-v-tri-svg btn-fs" onclick="toggleFS(); hideVivaUI()">
+            <div class="btn-v-tri-svg" onclick="toggleFS(); hideVivaUI()">
                 <svg viewBox="0 0 100 100"><path d="M50 90 L92 10 L8 10 Z" fill="#ffff00" stroke="#1a4a9e" stroke-width="6" stroke-linejoin="round"/></svg>
-                <div class="btn-icon-v icon-down">⛶</div>
+                <div class="btn-icon-v icon-fs">⛶</div>
             </div>
         </div>
         
@@ -226,7 +236,7 @@
         function zapToMusic(firstLoad) {
             mode = 'MUSIC';
             if (firstLoad) {
-                // Echter Shuffle-Start: Zufälliger Index bis 300
+                // Shuffle-Start: Zufälliger Index bis 300
                 playerMusic.loadPlaylist({ 
                     list: musicPlaylistId, 
                     index: Math.floor(Math.random() * 300) 
