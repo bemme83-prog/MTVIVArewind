@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIVA & MTV - Master Ultimate 2026 (Restored & Fixed)</title>
+    <title>VIVA & MTV - Master Ultimate 2026 (Final Fix)</title>
     <style>
         :root { 
             --viva-blue: #1a4a9e; --viva-yellow: #ffff00; --viva-pink: #ff00ff; 
@@ -19,13 +19,13 @@
         }
         .portal-grid { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; width: 90%; }
         .retro-card { 
-            position: relative; width: 340px; height: 190px; 
+            position: relative; width: 320px; height: 180px; 
             background: #111; border: 4px solid #444; border-radius: 15px; 
             overflow: hidden; cursor: pointer; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
-        .retro-card:hover { transform: scale(1.08); border-color: #fff; }
+        .retro-card:hover { transform: scale(1.05); border-color: #fff; }
         .preview-content { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.6; }
-        .card-label { position: absolute; bottom: 20px; left: 20px; color: #fff; font-size: 22px; text-shadow: 2px 2px 4px #000; z-index: 2; letter-spacing: 2px; }
+        .card-label { position: absolute; bottom: 20px; left: 20px; color: #fff; font-size: 20px; text-shadow: 2px 2px 4px #000; z-index: 2; }
 
         #menu-btn {
             position: absolute; top: 25px; right: 25px; z-index: 25000;
@@ -33,32 +33,33 @@
             padding: 12px 20px; font-size: 14px; cursor: pointer; opacity: 0; transition: 0.4s; border-radius: 8px;
         }
 
-        /* --- MTV VIEW (MASTER FIX) --- */
+        /* --- MTV VIEW --- */
         #mtv-view { position: absolute; inset: 0; display: none; background: #000; }
         .mtv-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
         
-        /* Video schiebt sich 15% hoch */
-        .mtv-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; transform: translateY(15%); transition: transform 0.4s ease; pointer-events: none; }
+        /* Video Verschiebung */
+        .mtv-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; transform: translateY(12%); transition: transform 0.4s ease; pointer-events: none; }
         .mtv-container.active-mode iframe { transform: translateY(0%); }
 
-        /* DAS GLAS: Deckt alles ab, aber schiebt sich bei Klick HOCH, um Buttons frei zu geben */
-        .mtv-glass { position: absolute; inset: 0; z-index: 20; cursor: pointer; background: rgba(0,0,0,0.01); transition: bottom 0.4s ease; }
-        .mtv-container.active-mode .mtv-glass { bottom: 150px; } /* Macht den Bereich unten klickbar! */
+        /* Das Glas: Im active-mode wird es komplett entfernt */
+        .mtv-glass { position: absolute; inset: 0; z-index: 20; cursor: pointer; background: transparent; }
+        .mtv-container.active-mode .mtv-glass { display: none; } 
 
         .mtv-top-info { position: absolute; top: 60px; left: 30px; z-index: 30; display: flex; align-items: center; pointer-events: none; transition: opacity 0.4s; }
         .mtv-container.active-mode .mtv-top-info { opacity: 0; }
         .mtv-day-label { background: var(--mtv-amber); color: #000; padding: 8px 18px; font-size: 20px; font-weight: 900; margin-right: 12px; }
 
+        /* Die Steuerleiste: Liegt über allem, wenn aktiv */
         .mtv-controls { 
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 150px;
-            z-index: 10; opacity: 0; transition: 0.4s; display: flex; justify-content: center; align-items: center; pointer-events: none; 
+            position: absolute; inset: 0; 
+            z-index: 1000; opacity: 0; transition: 0.4s; display: flex; justify-content: center; align-items: flex-end; pointer-events: none; 
         }
         .mtv-container.active-mode .mtv-controls { opacity: 1; pointer-events: auto; }
         
         .btn-mtv { 
-            background: var(--mtv-amber); color: #000; border: none; padding: 15px 40px; 
-            font-size: 18px; cursor: pointer; font-weight: 900; box-shadow: 4px 4px 0px #000;
-            text-transform: uppercase; margin-bottom: 20px;
+            background: var(--mtv-amber); color: #000; border: none; padding: 20px 50px; 
+            font-size: 20px; cursor: pointer; font-weight: 900; box-shadow: 5px 5px 0px #000;
+            text-transform: uppercase; margin-bottom: 120px; /* HÖHER GESETZT */
         }
 
         /* --- VIVA VIEW --- */
@@ -66,19 +67,18 @@
         .viva-click-shield { position: absolute; inset: 0; z-index: 15; background: transparent; }
         .viva-clock-container { position: absolute; top: 30px; left: 35px; z-index: 100; display: flex; align-items: center; gap: 15px; }
         .viva-clock { font-size: 28px; color: var(--viva-yellow); text-shadow: 3px 3px 0px var(--viva-blue); }
-        .viva-controls { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 8px; opacity: 0; transition: 0.5s; pointer-events: none; }
+        .viva-controls { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 10px; opacity: 0; transition: 0.5s; pointer-events: none; }
         .viva-controls.show { opacity: 1; pointer-events: auto; }
         .btn-v-tri-svg { width: 90px; height: 90px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; }
         .btn-v-tri-svg svg { position: absolute; inset: 0; width: 100%; height: 100%; }
         
         .player-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 0.5s linear; pointer-events: none; }
         .player-layer.active { opacity: 1; pointer-events: auto; }
-        .fade-6s { transition: opacity 6s ease-in-out !important; }
         #viva-tag { position: absolute; bottom: 25%; left: 0; z-index: 200; background: var(--viva-yellow); color: var(--viva-blue); padding: 15px 40px; border: 5px solid var(--viva-blue); box-shadow: 8px 8px 0px var(--viva-pink); transform: translateX(-110%); transition: 0.5s; pointer-events: none; }
         #viva-tag.show { transform: translateX(0); }
     </style>
 </head>
-<body>
+<body onclick="if(activeSystem==='MTV' && document.getElementById('mtvMainContainer').classList.contains('active-mode')) resetMtvTimer()">
 
     <button id="menu-btn" onclick="showPortal()">KANAL WECHSELN</button>
 
@@ -86,11 +86,11 @@
         <h2 style="color:white; margin-bottom:40px; letter-spacing:5px;">CHANNEL SELECTION</h2>
         <div class="portal-grid">
             <div class="retro-card" onclick="launchViva()">
-                <div id="bg-viva" class="preview-content"></div>
+                <div id="bg-viva" class="preview-content" style="background-image:url('https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=800')"></div>
                 <div class="card-label">VIVA REWIND</div>
             </div>
             <div class="retro-card" onclick="launchMtv()">
-                <div id="bg-mtv" class="preview-content"></div>
+                <div id="bg-mtv" class="preview-content" style="background-image:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800')"></div>
                 <div class="card-label">MTV REWIND</div>
             </div>
         </div>
@@ -127,8 +127,8 @@
                     <div id="mtv-date" style="font-size: 14px; color: var(--mtv-amber);">01.01.26</div>
                 </div>
             </div>
-            <div class="mtv-controls">
-                <button class="btn-mtv" onclick="toggleFS()">FULLSCREEN ⛶</button>
+            <div class="mtv-controls" onclick="toggleMtvInterface()">
+                <button class="btn-mtv" onclick="event.stopPropagation(); toggleFS();">FULLSCREEN ⛶</button>
             </div>
         </div>
     </div>
@@ -137,13 +137,7 @@
     <script>
         let pMusic, pInter, activeSystem = null, uiTimer, mtvTimeout;
         let currentMode = 'MUSIC', fadeTriggered = false;
-        let songsPlayed = 0, songsUntilNextClip = 2, currentClipId = "", clipsInThisSession = 0;
-
-        function initPortalBgs() {
-            document.getElementById('bg-viva').style.backgroundImage = "url('https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=800')";
-            document.getElementById('bg-mtv').style.backgroundImage = "url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800')";
-        }
-        initPortalBgs();
+        let songsPlayed = 0, currentClipId = "", clipsInThisSession = 0;
 
         function onYouTubeIframeAPIReady() {
             pMusic = new YT.Player('player-music', {
@@ -181,9 +175,20 @@
         function toggleMtvInterface() {
             const c = document.getElementById('mtvMainContainer');
             const menu = document.getElementById('menu-btn');
-            c.classList.add('active-mode'); menu.style.opacity = 1;
+            if(!c.classList.contains('active-mode')) {
+                c.classList.add('active-mode'); menu.style.opacity = 1;
+                resetMtvTimer();
+            } else {
+                c.classList.remove('active-mode'); menu.style.opacity = 0;
+            }
+        }
+
+        function resetMtvTimer() {
             clearTimeout(mtvTimeout);
-            mtvTimeout = setTimeout(() => { c.classList.remove('active-mode'); menu.style.opacity = 0; }, 8000);
+            mtvTimeout = setTimeout(() => {
+                document.getElementById('mtvMainContainer').classList.remove('active-mode');
+                document.getElementById('menu-btn').style.opacity = 0;
+            }, 8000);
         }
 
         function triggerClip() {
@@ -222,10 +227,9 @@
             document.getElementById('mtv-date').innerText = now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: '2-digit'});
             document.getElementById('mtv-weekday').innerText = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"][now.getDay()];
             if (activeSystem === 'VIVA' && currentMode === 'MUSIC' && pMusic.getPlayerState() === 1) {
-                if (pMusic.getDuration() - pMusic.getCurrentTime() <= 6 && songsPlayed >= songsUntilNextClip) triggerClip();
+                if (pMusic.getDuration() - pMusic.getCurrentTime() <= 6 && songsPlayed >= 2) triggerClip();
             }
         }, 1000);
     </script>
 </body>
-    </html>
-    
+</html>
