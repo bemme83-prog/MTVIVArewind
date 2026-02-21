@@ -3,36 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIVA REWIND v5.0 - Infinity Mode</title>
+    <title>VIVA REWIND v5.1 - The Enforcer</title>
     <style>
         :root { --viva-blue: #1a4a9e; --viva-yellow: #ffff00; --viva-pink: #ff00ff; }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #000; font-family: 'Arial Black', sans-serif; }
-        
-        #portal-overlay { position: fixed; inset: 0; z-index: 20000; background: radial-gradient(circle, #222 0%, #000 100%); display: flex; justify-content: center; align-items: center; }
-        .start-btn { padding: 25px 50px; background: var(--viva-yellow); color: var(--viva-blue); border: 5px solid var(--viva-blue); font-size: 22px; cursor: pointer; font-weight: bold; box-shadow: 8px 8px 0px var(--viva-pink); transition: 0.2s; }
-        .start-btn:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0px var(--viva-pink); }
-
+        #portal-overlay { position: fixed; inset: 0; z-index: 20000; background: #000; display: flex; justify-content: center; align-items: center; }
+        .start-btn { padding: 25px 50px; background: var(--viva-yellow); color: var(--viva-blue); border: 5px solid var(--viva-blue); font-size: 22px; cursor: pointer; font-weight: bold; box-shadow: 8px 8px 0px var(--viva-pink); }
         .player-container { position: absolute; inset: 0; opacity: 0; pointer-events: none; background: #000; }
         .active-player { opacity: 1; pointer-events: auto; }
-        
         .viva-clock { position: absolute; top: 30px; left: 35px; z-index: 500; font-size: 28px; color: var(--viva-yellow); text-shadow: 3px 3px 0px var(--viva-blue); }
-        #viva-tag { position: absolute; bottom: 25%; left: 0; z-index: 600; background: var(--viva-yellow); color: var(--viva-blue); padding: 15px 40px; border: 5px solid var(--viva-blue); box-shadow: 8px 8px 0px var(--viva-pink); transform: translateX(-110%); transition: 0.5s; pointer-events: none; }
-        #viva-tag.show { transform: translateX(0); }
-        
-        #debug { position: absolute; top: 75px; left: 35px; z-index: 500; color: #00ff00; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.6); padding: 5px; border-radius: 4px; pointer-events: none; }
+        #debug { position: absolute; top: 75px; left: 35px; z-index: 500; color: #00ff00; font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.7); padding: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="portal-overlay">
-        <button class="start-btn" onclick="startInfinity()">VIVA STARTEN</button>
-    </div>
+    <div id="portal-overlay"><button class="start-btn" onclick="startInfinity()">VIVA STARTEN (v5.1)</button></div>
 
     <div id="viva-view">
         <div id="viva-clock" class="viva-clock">00:00</div>
-        <div id="debug">Ready.</div>
-        <div id="viva-tag"><div id="viva-title">VIVA REWIND</div></div>
-        
+        <div id="debug">System bereit.</div>
         <div id="div-music" class="player-container"><div id="player-music"></div></div>
         <div id="div-inter" class="player-container"><div id="player-inter"></div></div>
     </div>
@@ -40,13 +29,13 @@
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         let pMusic, pInter;
-        let currentMode = 'MUSIC'; // 'MUSIC' oder 'CLIP'
+        let currentMode = 'MUSIC';
         let fadeTriggered = false;
         let lastClipId = "";
+        let clipStartTime = 0;
 
         const musicPL = 'PLfYJatUfKgnlRa5IM0KI_ll0UyhYItnU2';
         const interPL = 'PLQ7SWY9Xieg3hXzm58s84PRe53LttQbJl';
-        const clipCount = 50; // Geschätzte Anzahl Clips in deiner Liste
 
         function onYouTubeIframeAPIReady() {
             pMusic = new YT.Player('player-music', {
@@ -63,34 +52,16 @@
 
         function startInfinity() {
             document.getElementById('portal-overlay').style.display = 'none';
-            currentMode = 'MUSIC';
-            fadeTriggered = false;
+            pMusic.loadPlaylist({ list: musicPL, index: Math.floor(Math.random() * 50) });
             switchVisuals('MUSIC', '0s');
-            
-            // Musik mit Zufallsstart laden
-            pMusic.loadPlaylist({
-                list: musicPL,
-                index: Math.floor(Math.random() * 100)
-            });
-            pMusic.setVolume(100);
-            updateDebug("Infinity Mode aktiv...");
         }
 
         function handleState(e, type) {
-            // Song-Titel Einblendung
-            if (type === 'MUSIC' && e.data === YT.PlayerState.PLAYING) {
-                showTag(e.target.getVideoData().title);
-                fadeTriggered = false;
-                updateDebug("Spiele Musik...");
-            }
-
-            // Clip-Start Erkennung
             if (type === 'CLIP' && e.data === YT.PlayerState.PLAYING) {
                 lastClipId = extractId(e.target.getVideoUrl());
-                updateDebug("Spiele Clip: " + lastClipId);
+                clipStartTime = Date.now(); // Zeitstempel beim Start des Clips
+                updateDebug("Clip aktiv: " + lastClipId);
             }
-
-            // Reguläres Ende (Sicherheitsebene)
             if (type === 'CLIP' && e.data === YT.PlayerState.ENDED) {
                 switchToMusic();
             }
@@ -98,27 +69,21 @@
 
         function switchToClip() {
             currentMode = 'CLIP';
-            updateDebug("Crossfade zu Clip...");
+            fadeTriggered = true;
+            const randomIdx = Math.floor(Math.random() * 40);
             
-            // Zufälligen Clip wählen
-            const randomClipIndex = Math.floor(Math.random() * clipCount);
             pInter.setVolume(0);
-            pInter.loadPlaylist({ list: interPL, index: randomClipIndex });
-            
+            pInter.loadPlaylist({ list: interPL, index: randomIdx });
             switchVisuals('CLIP', '6s');
-            
-            // Audio-Fade 6s
+
             let vol = 100;
-            let audioInterval = setInterval(() => {
+            let fader = setInterval(() => {
                 vol -= 5;
                 if (vol <= 0) {
-                    pMusic.setVolume(0);
-                    pMusic.pauseVideo();
-                    pInter.setVolume(100);
-                    clearInterval(audioInterval);
+                    pMusic.pauseVideo(); pMusic.setVolume(0);
+                    pInter.setVolume(100); clearInterval(fader);
                 } else {
-                    pMusic.setVolume(vol);
-                    pInter.setVolume(100 - vol);
+                    pMusic.setVolume(vol); pInter.setVolume(100 - vol);
                 }
             }, 300);
         }
@@ -126,14 +91,16 @@
         function switchToMusic() {
             if (currentMode === 'MUSIC') return;
             currentMode = 'MUSIC';
-            updateDebug("Schnitt zurück zu Musik...");
-            
-            pInter.stopVideo();
-            switchVisuals('MUSIC', '0.5s'); // Harder Schnitt zurück
+            fadeTriggered = false;
+            lastClipId = "";
+
+            pInter.stopVideo(); // Zerstört die aktuelle Clip-Wiedergabe
+            switchVisuals('MUSIC', '0.5s');
             
             pMusic.setVolume(100);
             pMusic.nextVideo();
             pMusic.playVideo();
+            updateDebug("Zurück zur Musik.");
         }
 
         function extractId(url) {
@@ -146,50 +113,39 @@
             const dI = document.getElementById('div-inter');
             dM.style.transition = `opacity ${speed}`;
             dI.style.transition = `opacity ${speed}`;
-            if (target === 'MUSIC') {
-                dM.className = 'player-container active-player';
-                dI.className = 'player-container';
-            } else {
-                dI.className = 'player-container active-player';
-                dM.className = 'player-container';
-            }
+            if (target === 'MUSIC') { dM.classList.add('active-player'); dI.classList.remove('active-player'); }
+            else { dI.classList.add('active-player'); dM.classList.remove('active-player'); }
         }
 
-        function showTag(t) {
-            if (!t) return;
-            document.getElementById('viva-title').innerText = t;
-            const tag = document.getElementById('viva-tag');
-            tag.classList.add('show');
-            setTimeout(() => tag.classList.remove('show'), 6000);
-        }
+        function updateDebug(msg) { document.getElementById('debug').innerText = msg; }
 
-        function updateDebug(msg) {
-            document.getElementById('debug').innerText = msg;
-        }
-
-        // MASTER LOOP
         setInterval(() => {
-            // Uhrzeit
             document.getElementById('viva-clock').innerText = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
 
-            // Logik während Musik läuft
             if (currentMode === 'MUSIC' && pMusic && pMusic.getPlayerState() === 1) {
                 let timeLeft = pMusic.getDuration() - pMusic.getCurrentTime();
-                if (timeLeft <= 6 && !fadeTriggered && timeLeft > 0) {
-                    fadeTriggered = true;
-                    switchToClip();
-                }
+                if (timeLeft <= 6 && !fadeTriggered) switchToClip();
             }
 
-            // Logik während Clip läuft (ID Watcher gegen Playlist-Weiterlauf)
-            if (currentMode === 'CLIP' && pInter && pInter.getPlayerState() === 1) {
+            if (currentMode === 'CLIP' && pInter && pInter.getPlayerState) {
                 const nowId = extractId(pInter.getVideoUrl());
+                const elapsed = (Date.now() - clipStartTime) / 1000;
+
+                // 1. ID-Watcher: Hat YouTube das Video gewechselt?
                 if (lastClipId !== "" && nowId !== "" && nowId !== lastClipId) {
-                    updateDebug("Nächster Clip blockiert -> Musik!");
+                    updateDebug("ID-Abweichung! Erzwinge Rücksprung.");
+                    switchToMusic();
+                }
+
+                // 2. Zeit-Enforcer: Läuft der Clip länger als 45 Sekunden? (Deine Clips sind ja < 10s)
+                // Das fängt Hänger ab, in denen YouTube gar keine neue ID meldet.
+                if (elapsed > 45) {
+                    updateDebug("Zeit-Limit erreicht! Erzwinge Musik.");
                     switchToMusic();
                 }
             }
         }, 500);
     </script>
 </body>
-</html>
+    </html>
+    
