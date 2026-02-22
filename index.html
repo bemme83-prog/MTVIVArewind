@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIVA & MTV - Master Ultimate 2026 v7.5</title>
+    <title>VIVA & MTV - Master Ultimate 2026 v7.6</title>
     <style>
         :root { 
             --viva-blue: #1a4a9e; --viva-yellow: #ffff00; --viva-pink: #ff00ff; 
@@ -67,7 +67,6 @@
         .mtv-container.active-mode iframe { transform: translateY(0%); }
         .mtv-glass { position: absolute; inset: 0; z-index: 20; cursor: pointer; }
         .mtv-container.active-mode .mtv-glass { bottom: 120px; }
-
         .mtv-top-info { position: absolute; top: 60px; left: 30px; z-index: 30; display: flex; align-items: center; pointer-events: none; }
         .mtv-day-label { background: var(--mtv-amber); color: #000; padding: 8px 18px; font-size: 20px; font-weight: 900; margin-right: 12px; }
         .btn-mtv { background: var(--mtv-amber); color: #000; border: none; padding: 15px 30px; font-size: 16px; cursor: pointer; font-weight: 900; text-transform: uppercase; border-radius: 4px; box-shadow: 4px 4px 0px #000; }
@@ -84,7 +83,7 @@
                 <div id="bg-viva" class="preview-content"></div>
                 <div class="card-info">
                     <p class="card-label">VIVA REWIND</p>
-                    <p class="card-sub">Shuffle 0-300 • Clip-Guard • v7.5</p>
+                    <p class="card-sub">Anti-Freeze • 4-Dreieck Logo • v7.6</p>
                 </div>
             </div>
             <div class="retro-card card-mtv" onclick="launchMtv()">
@@ -95,7 +94,7 @@
                 </div>
             </div>
         </div>
-        <div style="position:absolute; bottom:15px; right:20px; color:rgba(255,255,255,0.2); font-size:9px;">MASTER ULTIMATE 2026_V75</div>
+        <div style="position:absolute; bottom:15px; right:20px; color:rgba(255,255,255,0.2); font-size:9px;">MASTER ULTIMATE 2026_V76</div>
     </div>
 
     <div id="viva-view">
@@ -260,11 +259,20 @@
             if (activeSystem === 'VIVA') {
                 document.getElementById('viva-clock').innerText = timeStr;
                 let cp = (currentMode === 'MUSIC') ? pMusic : pInter;
-                if (cp && cp.getPlayerState && cp.getPlayerState() === 1) {
-                    let t = cp.getCurrentTime();
-                    if (t === lastTime) { hangCounter++; if (hangCounter > 15) { (currentMode === 'MUSIC') ? pMusic.nextVideo() : switchToMusic(); hangCounter = 0; } } 
-                    else { hangCounter = 0; lastTime = t; }
-                    if (currentMode === 'MUSIC' && (cp.getDuration() - t) <= 6 && !fadeTriggered && songsPlayed >= songsUntilNextClip) switchToClip();
+                if (cp && typeof cp.getPlayerState === 'function') {
+                    const state = cp.getPlayerState();
+                    const t = cp.getCurrentTime();
+                    // ANTI-FREEZE: Stillstand ODER Buffering (State 3)
+                    if (state === 1 || state === 3) {
+                        if (t === lastTime || state === 3) {
+                            hangCounter++;
+                            if (hangCounter > 12) { // Rettung nach ca. 6 Sek.
+                                (currentMode === 'MUSIC') ? pMusic.nextVideo() : switchToMusic();
+                                hangCounter = 0;
+                            }
+                        } else { hangCounter = 0; lastTime = t; }
+                    }
+                    if (currentMode === 'MUSIC' && state === 1 && (cp.getDuration() - t) <= 6 && !fadeTriggered && songsPlayed >= songsUntilNextClip) switchToClip();
                 }
             } else if (activeSystem === 'MTV') {
                 document.getElementById('mtv-clock').innerText = timeStr;
@@ -280,5 +288,5 @@
         setInterval(updateBGs, 10000); updateBGs();
     </script>
 </body>
-    </html>
-    
+                                                                    </html>
+                                                                    
